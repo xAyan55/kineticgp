@@ -15,6 +15,9 @@ import profileRoutes from './routes/profileRoutes';
 
 const app = express();
 
+// Trust Proxy for Cloudflare Tunnel & Reverse Proxies
+app.set('trust proxy', 1);
+
 // Database Initialization
 initDatabase();
 
@@ -84,8 +87,8 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 
 // Start Server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(CONFIG.PORT, () => {
-    console.log(`🚀 KineticGP Server running in ${CONFIG.NODE_ENV} mode on http://localhost:${CONFIG.PORT}`);
+  app.listen(CONFIG.PORT, '0.0.0.0', () => {
+    console.log(`🚀 KineticGP Server running in ${CONFIG.NODE_ENV} mode on http://0.0.0.0:${CONFIG.PORT}`);
   });
 }
 
