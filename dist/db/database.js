@@ -8,6 +8,7 @@ exports.initDatabase = initDatabase;
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const crypto_1 = __importDefault(require("crypto"));
 const config_1 = require("../config");
 const storageDir = path_1.default.dirname(config_1.CONFIG.DB_PATH);
 if (!fs_1.default.existsSync(storageDir)) {
@@ -101,46 +102,26 @@ function initDatabase() {
     exports.db.exec(`
     CREATE TABLE IF NOT EXISTS servers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      uuid TEXT UNIQUE NOT NULL,
-      user_id INTEGER NOT NULL,
       name TEXT NOT NULL,
-      description TEXT DEFAULT '',
       game TEXT NOT NULL DEFAULT 'Minecraft',
-      version TEXT NOT NULL DEFAULT '1.20.4',
-      software TEXT NOT NULL DEFAULT 'Paper',
-      java_version TEXT NOT NULL DEFAULT '21',
-      ram_limit INTEGER NOT NULL DEFAULT 2048,
-      cpu_limit INTEGER NOT NULL DEFAULT 100,
-      disk_limit INTEGER NOT NULL DEFAULT 10,
-      directory TEXT NOT NULL,
-      jar_file TEXT NOT NULL DEFAULT 'server.jar',
-      port INTEGER NOT NULL UNIQUE,
-      startup_command TEXT NOT NULL DEFAULT 'java -Xms128M -Xmx{ram}M -jar {jar_file} --nogui',
-      auto_restart INTEGER NOT NULL DEFAULT 1,
       status TEXT NOT NULL DEFAULT 'offline',
-      pid INTEGER DEFAULT NULL,
-      players_online INTEGER DEFAULT 0,
-      max_players INTEGER DEFAULT 20,
-      cpu_usage REAL DEFAULT 0,
-      memory_usage INTEGER DEFAULT 0,
-      disk_usage REAL DEFAULT 0,
-      suspended INTEGER NOT NULL DEFAULT 0,
-      last_started DATETIME DEFAULT NULL,
-      last_stopped DATETIME DEFAULT NULL,
+      ip_address TEXT NOT NULL DEFAULT '127.0.0.1',
+      port INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
-    CREATE INDEX IF NOT EXISTS idx_servers_uuid ON servers(uuid);
-    CREATE INDEX IF NOT EXISTS idx_servers_user_id ON servers(user_id);
-    CREATE INDEX IF NOT EXISTS idx_servers_status ON servers(status);
   `);
-    // Auto-migration for servers table columns if missing
+    // Auto-migration for servers table columns FIRST (before creating indexes)
     try {
         const serverColumns = exports.db.pragma('table_info(servers)');
         const colNames = serverColumns.map(c => c.name);
         if (!colNames.includes('uuid')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN uuid TEXT DEFAULT NULL`);
+        }
+        if (!colNames.includes('description')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN description TEXT DEFAULT ''`);
         }
         if (!colNames.includes('version')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN version TEXT NOT NULL DEFAULT '1.20.4'`);
@@ -153,6 +134,9 @@ function initDatabase() {
         }
         if (!colNames.includes('ram_limit')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN ram_limit INTEGER NOT NULL DEFAULT 2048`);
+        }
+        if (!colNames.includes('cpu_limit')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN cpu_limit INTEGER NOT NULL DEFAULT 100`);
         }
         if (!colNames.includes('disk_limit')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN disk_limit INTEGER NOT NULL DEFAULT 10`);
@@ -172,6 +156,21 @@ function initDatabase() {
         if (!colNames.includes('pid')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN pid INTEGER DEFAULT NULL`);
         }
+        if (!colNames.includes('players_online')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN players_online INTEGER DEFAULT 0`);
+        }
+        if (!colNames.includes('max_players')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN max_players INTEGER DEFAULT 20`);
+        }
+        if (!colNames.includes('cpu_usage')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN cpu_usage REAL DEFAULT 0`);
+        }
+        if (!colNames.includes('memory_usage')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN memory_usage INTEGER DEFAULT 0`);
+        }
+        if (!colNames.includes('disk_usage')) {
+            exports.db.exec(`ALTER TABLE servers ADD COLUMN disk_usage REAL DEFAULT 0`);
+        }
         if (!colNames.includes('suspended')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0`);
         }
@@ -181,10 +180,21 @@ function initDatabase() {
         if (!colNames.includes('last_stopped')) {
             exports.db.exec(`ALTER TABLE servers ADD COLUMN last_stopped DATETIME DEFAULT NULL`);
         }
+        // Populate missing UUIDs for existing servers
+        const unindexedServers = exports.db.prepare('SELECT id FROM servers WHERE uuid IS NULL').all();
+        for (const s of unindexedServers) {
+            exports.db.prepare('UPDATE servers SET uuid = ? WHERE id = ?').run(crypto_1.default.randomUUID(), s.id);
+        }
     }
     catch (e) {
         console.error('Migration warning (servers table):', e);
     }
+    // Create Indexes AFTER table columns are guaranteed to exist
+    exports.db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_servers_uuid ON servers(uuid);
+    CREATE INDEX IF NOT EXISTS idx_servers_user_id ON servers(user_id);
+    CREATE INDEX IF NOT EXISTS idx_servers_status ON servers(status);
+  `);
     // Server Logs Table
     exports.db.exec(`
     CREATE TABLE IF NOT EXISTS server_logs (
