@@ -15,6 +15,8 @@ class AdminController {
     // ── Overview ────────────────────────────────────────────────────────
     static getOverview(req, res) {
         const user = userModel_1.UserModel.findById(req.session.userId);
+        if (!user)
+            return res.redirect('/login');
         const totalUsers = userModel_1.UserModel.countAll();
         const activeUsers = userModel_1.UserModel.countActive();
         const suspendedUsers = userModel_1.UserModel.countSuspended();
@@ -49,6 +51,8 @@ class AdminController {
     // ── Nodes Management ───────────────────────────────────────────────
     static getNodes(req, res) {
         const user = userModel_1.UserModel.findById(req.session.userId);
+        if (!user)
+            return res.redirect('/login');
         const node = nodeService_1.NodeService.getSystemMetrics();
         const settings = settingModel_1.SettingModel.getAll();
         res.render('admin/nodes', {
@@ -61,6 +65,8 @@ class AdminController {
     // ── Users Management ───────────────────────────────────────────────
     static getUsers(req, res) {
         const user = userModel_1.UserModel.findById(req.session.userId);
+        if (!user)
+            return res.redirect('/login');
         const page = parseInt(String(req.query.page || '1'), 10);
         const limit = 10;
         const search = String(req.query.search || '').trim();
@@ -81,8 +87,8 @@ class AdminController {
             roleFilter,
             statusFilter,
             settings,
-            msg: req.query.msg,
-            err: req.query.err
+            msg: req.query.msg || null,
+            err: req.query.err || null
         });
     }
     static postCreateUser(req, res) {
@@ -195,6 +201,8 @@ class AdminController {
     // ── Plans Management ───────────────────────────────────────────────
     static getPlans(req, res) {
         const user = userModel_1.UserModel.findById(req.session.userId);
+        if (!user)
+            return res.redirect('/login');
         const plans = planModel_1.PlanModel.findAll();
         const settings = settingModel_1.SettingModel.getAll();
         res.render('admin/plans', {
@@ -202,8 +210,8 @@ class AdminController {
             user,
             plans,
             settings,
-            msg: req.query.msg,
-            err: req.query.err
+            msg: req.query.msg || null,
+            err: req.query.err || null
         });
     }
     static postCreatePlan(req, res) {
@@ -273,13 +281,15 @@ class AdminController {
     // ── Panel Settings ──────────────────────────────────────────────────
     static getSettings(req, res) {
         const user = userModel_1.UserModel.findById(req.session.userId);
+        if (!user)
+            return res.redirect('/login');
         const settings = settingModel_1.SettingModel.getAll();
         res.render('admin/settings', {
             title: 'Panel Branding & Settings',
             user,
             settings,
-            msg: req.query.msg,
-            err: req.query.err
+            msg: req.query.msg || null,
+            err: req.query.err || null
         });
     }
     static postUpdateSettings(req, res) {
@@ -316,6 +326,8 @@ class AdminController {
     // ── Audit Logs ─────────────────────────────────────────────────────
     static getAuditLogs(req, res) {
         const user = userModel_1.UserModel.findById(req.session.userId);
+        if (!user)
+            return res.redirect('/login');
         const page = parseInt(String(req.query.page || '1'), 10);
         const limit = 15;
         const search = String(req.query.search || '').trim();

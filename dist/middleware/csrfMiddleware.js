@@ -13,6 +13,7 @@ function csrfProtection(req, res, next) {
         req.session.csrfSecret = crypto_1.default.randomBytes(24).toString('hex');
     }
     res.locals.csrfToken = req.session.csrfSecret;
+    res.locals._csrf = req.session.csrfSecret;
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
         const clientToken = req.body?._csrf || req.headers['x-csrf-token'];
         if (!clientToken || clientToken !== req.session.csrfSecret) {

@@ -11,7 +11,9 @@ import { ActivityModel } from '../models/activityModel';
 export class AdminController {
   // ── Overview ────────────────────────────────────────────────────────
   static getOverview(req: Request, res: Response): void {
-    const user = UserModel.findById(req.session.userId!)!;
+    const user = UserModel.findById(req.session.userId!);
+    if (!user) return res.redirect('/login');
+
     const totalUsers = UserModel.countAll();
     const activeUsers = UserModel.countActive();
     const suspendedUsers = UserModel.countSuspended();
@@ -48,7 +50,9 @@ export class AdminController {
 
   // ── Nodes Management ───────────────────────────────────────────────
   static getNodes(req: Request, res: Response): void {
-    const user = UserModel.findById(req.session.userId!)!;
+    const user = UserModel.findById(req.session.userId!);
+    if (!user) return res.redirect('/login');
+
     const node = NodeService.getSystemMetrics();
     const settings = SettingModel.getAll();
 
@@ -62,7 +66,9 @@ export class AdminController {
 
   // ── Users Management ───────────────────────────────────────────────
   static getUsers(req: Request, res: Response): void {
-    const user = UserModel.findById(req.session.userId!)!;
+    const user = UserModel.findById(req.session.userId!);
+    if (!user) return res.redirect('/login');
+
     const page = parseInt(String(req.query.page || '1'), 10);
     const limit = 10;
     const search = String(req.query.search || '').trim();
@@ -85,8 +91,8 @@ export class AdminController {
       roleFilter,
       statusFilter,
       settings,
-      msg: req.query.msg,
-      err: req.query.err
+      msg: req.query.msg || null,
+      err: req.query.err || null
     });
   }
 
@@ -237,7 +243,9 @@ export class AdminController {
 
   // ── Plans Management ───────────────────────────────────────────────
   static getPlans(req: Request, res: Response): void {
-    const user = UserModel.findById(req.session.userId!)!;
+    const user = UserModel.findById(req.session.userId!);
+    if (!user) return res.redirect('/login');
+
     const plans = PlanModel.findAll();
     const settings = SettingModel.getAll();
 
@@ -246,8 +254,8 @@ export class AdminController {
       user,
       plans,
       settings,
-      msg: req.query.msg,
-      err: req.query.err
+      msg: req.query.msg || null,
+      err: req.query.err || null
     });
   }
 
@@ -337,15 +345,17 @@ export class AdminController {
 
   // ── Panel Settings ──────────────────────────────────────────────────
   static getSettings(req: Request, res: Response): void {
-    const user = UserModel.findById(req.session.userId!)!;
+    const user = UserModel.findById(req.session.userId!);
+    if (!user) return res.redirect('/login');
+
     const settings = SettingModel.getAll();
 
     res.render('admin/settings', {
       title: 'Panel Branding & Settings',
       user,
       settings,
-      msg: req.query.msg,
-      err: req.query.err
+      msg: req.query.msg || null,
+      err: req.query.err || null
     });
   }
 
@@ -390,7 +400,9 @@ export class AdminController {
 
   // ── Audit Logs ─────────────────────────────────────────────────────
   static getAuditLogs(req: Request, res: Response): void {
-    const user = UserModel.findById(req.session.userId!)!;
+    const user = UserModel.findById(req.session.userId!);
+    if (!user) return res.redirect('/login');
+
     const page = parseInt(String(req.query.page || '1'), 10);
     const limit = 15;
     const search = String(req.query.search || '').trim();

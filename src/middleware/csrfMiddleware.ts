@@ -11,6 +11,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   }
 
   res.locals.csrfToken = req.session.csrfSecret;
+  res.locals._csrf = req.session.csrfSecret;
 
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
     const clientToken = req.body?._csrf || req.headers['x-csrf-token'];
