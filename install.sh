@@ -63,10 +63,10 @@ else
   cd "$INSTALL_DIR"
 fi
 
-# Step 5: Install NPM packages, rebuild native binaries, and build static assets
-echo -e "${BLUE}🔹 Step 4/5: Installing dependencies, rebuilding native modules & building assets...${NC}"
+# Step 5: Install NPM packages, rebuild native binaries from source, and build static assets
+echo -e "${BLUE}🔹 Step 4/5: Installing dependencies & compiling native modules from source...${NC}"
 npm install --production=false
-npm rebuild better-sqlite3 || npm rebuild
+npm rebuild better-sqlite3 --build-from-source || npm rebuild --build-from-source
 npm run build
 
 # Ensure storage directory exists with proper write permissions
