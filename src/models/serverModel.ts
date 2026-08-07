@@ -39,20 +39,4 @@ export class ServerModel {
     const result = stmt.run(status, cpu, memory, players, id, userId);
     return result.changes > 0;
   }
-
-  static seedDemoServersIfEmpty(userId: number): void {
-    const checkStmt = db.prepare('SELECT COUNT(*) as count FROM servers WHERE user_id = ?');
-    const res = checkStmt.get(userId) as { count: number };
-
-    if (res.count === 0) {
-      const insert = db.prepare(`
-        INSERT INTO servers (name, game, status, ip_address, port, players_online, max_players, cpu_usage, memory_usage, max_memory, disk_usage, max_disk, user_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      insert.run('Survival SMP Node', 'Minecraft 1.20.4', 'online', 'play.kinetichost.pro', 25565, 14, 30, 24.5, 3420, 8192, 18.4, 100, userId);
-      insert.run('SkyBlock Alpha', 'Minecraft Paper 1.20', 'online', 'sb.kinetichost.pro', 25566, 8, 20, 18.2, 2150, 4096, 12.1, 50, userId);
-      insert.run('Creative Build Realm', 'Minecraft Spigot 1.20', 'offline', 'build.kinetichost.pro', 25567, 0, 15, 0.0, 0, 4096, 8.7, 40, userId);
-    }
-  }
 }

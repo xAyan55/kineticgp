@@ -9,7 +9,6 @@ const validator_1 = __importDefault(require("validator"));
 const userModel_1 = require("../models/userModel");
 const config_1 = require("../config");
 const activityModel_1 = require("../models/activityModel");
-const serverModel_1 = require("../models/serverModel");
 class AuthController {
     static getLogin(req, res) {
         const error = req.query.err;
@@ -43,9 +42,6 @@ class AuthController {
         if (remember === 'on') {
             req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
         }
-        // Seed demo data if first login for this user
-        serverModel_1.ServerModel.seedDemoServersIfEmpty(user.id);
-        activityModel_1.ActivityModel.seedDemoLogsIfEmpty(user.id, user.username);
         activityModel_1.ActivityModel.log(user.id, user.username, 'USER_LOGIN', `User logged in from ${req.ip || '127.0.0.1'}`);
         res.redirect('/dashboard');
     }
@@ -90,9 +86,6 @@ class AuthController {
             password_hash,
             avatar: randomAvatar
         });
-        // Seed servers & activity logs
-        serverModel_1.ServerModel.seedDemoServersIfEmpty(newUser.id);
-        activityModel_1.ActivityModel.seedDemoLogsIfEmpty(newUser.id, newUser.username);
         activityModel_1.ActivityModel.log(newUser.id, newUser.username, 'ACCOUNT_CREATED', `New account created with username: ${cleanUsername}`);
         // Auto login after registration
         req.session.userId = newUser.id;

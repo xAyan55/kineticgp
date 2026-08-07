@@ -4,7 +4,6 @@ import validator from 'validator';
 import { UserModel } from '../models/userModel';
 import { CONFIG } from '../config';
 import { ActivityModel } from '../models/activityModel';
-import { ServerModel } from '../models/serverModel';
 
 export class AuthController {
   static getLogin(req: Request, res: Response): void {
@@ -48,9 +47,6 @@ export class AuthController {
       req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
     }
 
-    // Seed demo data if first login for this user
-    ServerModel.seedDemoServersIfEmpty(user.id);
-    ActivityModel.seedDemoLogsIfEmpty(user.id, user.username);
     ActivityModel.log(user.id, user.username, 'USER_LOGIN', `User logged in from ${req.ip || '127.0.0.1'}`);
 
     res.redirect('/dashboard');
@@ -109,9 +105,6 @@ export class AuthController {
       avatar: randomAvatar
     });
 
-    // Seed servers & activity logs
-    ServerModel.seedDemoServersIfEmpty(newUser.id);
-    ActivityModel.seedDemoLogsIfEmpty(newUser.id, newUser.username);
     ActivityModel.log(newUser.id, newUser.username, 'ACCOUNT_CREATED', `New account created with username: ${cleanUsername}`);
 
     // Auto login after registration

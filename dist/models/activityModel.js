@@ -16,15 +16,5 @@ class ActivityModel {
     `);
         stmt.run(userId, username, action, details, ipAddress);
     }
-    static seedDemoLogsIfEmpty(userId, username) {
-        const checkStmt = database_1.db.prepare('SELECT COUNT(*) as count FROM activity_logs WHERE user_id = ?');
-        const res = checkStmt.get(userId);
-        if (res.count === 0) {
-            this.log(userId, username, 'SERVER_START', 'Started "Survival SMP Node" (Paper 1.20.4)');
-            this.log(userId, username, 'CONFIG_UPDATE', 'Updated server.properties max-players to 30');
-            this.log(userId, username, 'BACKUP_CREATE', 'Created scheduled automatic world backup #142');
-            this.log(userId, username, 'USER_LOGIN', 'User authenticated successfully from 192.168.1.50');
-        }
-    }
 }
 exports.ActivityModel = ActivityModel;

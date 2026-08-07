@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserModel } from '../models/userModel';
 import { ServerModel } from '../models/serverModel';
 import { ActivityModel } from '../models/activityModel';
+import { SettingModel } from '../models/settingModel';
 
 export class DashboardController {
   static getDashboard(req: Request, res: Response): void {
@@ -13,8 +14,7 @@ export class DashboardController {
       return res.redirect('/login');
     }
 
-    ServerModel.seedDemoServersIfEmpty(userId);
-    ActivityModel.seedDemoLogsIfEmpty(userId, user.username);
+
 
     const servers = ServerModel.findByUserId(userId);
     const activityLogs = ActivityModel.getRecentByUserId(userId, 6);

@@ -12,8 +12,6 @@ class DashboardController {
             req.session.destroy(() => { });
             return res.redirect('/login');
         }
-        serverModel_1.ServerModel.seedDemoServersIfEmpty(userId);
-        activityModel_1.ActivityModel.seedDemoLogsIfEmpty(userId, user.username);
         const servers = serverModel_1.ServerModel.findByUserId(userId);
         const activityLogs = activityModel_1.ActivityModel.getRecentByUserId(userId, 6);
         // Compute stats
