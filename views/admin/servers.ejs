@@ -190,7 +190,7 @@
       <h3 class="text-lg font-bold text-white">Create Minecraft Server</h3>
       <button onclick="closeModal('createServerModal')" class="text-neutral-400 hover:text-white">&times;</button>
     </div>
-    <form method="POST" action="/admin/servers/create" class="space-y-5 text-xs">
+    <form method="POST" action="/admin/servers/create" onsubmit="const btn = this.querySelector('button[type=submit]'); btn.innerText = 'Creating Server...'; btn.disabled = true;" class="space-y-5 text-xs">
       <input type="hidden" name="_csrf" value="<%= _csrf %>">
 
       <!-- GENERAL SECTION -->

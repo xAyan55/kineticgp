@@ -75,14 +75,16 @@ export class AdminServerController {
 
     ActivityModel.log(adminUser.id, adminUser.username, 'ADMIN_SERVER_CREATE', `Created server "${newServer.name}" (UUID: ${newServer.uuid}) for user ${owner.username}`, req.ip || '127.0.0.1');
 
-    // 2. Install Server JAR & Files asynchronously
-    MinecraftJarService.installServer(newServer.uuid, cleanSoftware, cleanVersion, newServer.port, newServer.name)
-      .then(() => {
-        console.log(`✅ Background Jar install finished for ${newServer.name}`);
-      })
-      .catch((err) => {
-        console.error(`❌ Background Jar install error for ${newServer.name}:`, err);
-      });
+    // 2. Install Server JAR & Files asynchronously on next event loop tick
+    setImmediate(() => {
+      MinecraftJarService.installServer(newServer.uuid, cleanSoftware, cleanVersion, newServer.port, newServer.name)
+        .then(() => {
+          console.log(`✅ Background Jar install finished for ${newServer.name}`);
+        })
+        .catch((err) => {
+          console.error(`❌ Background Jar install error for ${newServer.name}:`, err);
+        });
+    });
 
     res.redirect('/admin/servers?msg=server_created');
   }
