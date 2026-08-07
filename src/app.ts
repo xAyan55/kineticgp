@@ -41,8 +41,11 @@ app.use(cookieParser());
 // Static Folder
 app.use(express.static(path.join(process.cwd(), 'public')));
 
+import { SQLiteSessionStore } from './services/sessionStore';
+
 // Express Session
 app.use(session({
+  store: new SQLiteSessionStore(),
   secret: CONFIG.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

@@ -116,6 +116,20 @@ export class ProcessManager extends EventEmitter {
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
+      // Attach error handler immediately to prevent uncaught ENOENT process crashes
+      child.on('error', (err: any) => {
+        this.activeProcesses.delete(server.uuid);
+        ServerModel.updateRuntimeState(server.id, 'offline', null);
+        this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
+
+        if (err.code === 'ENOENT') {
+          this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] ❌ Java runtime binary ("java") was not found on the host system.`);
+          this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Please install OpenJDK on your server host: "sudo apt update && sudo apt install -y default-jre"`);
+        } else {
+          this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process launch error: ${err.message}`);
+        }
+      });
+
       if (!child.pid) {
         this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Failed to launch Java process.`);
         return false;
@@ -147,17 +161,12 @@ export class ProcessManager extends EventEmitter {
         this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
       });
 
-      child.on('error', (err) => {
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process exception: ${err.message}`);
-        this.activeProcesses.delete(server.uuid);
-        ServerModel.updateRuntimeState(server.id, 'offline', null);
-      });
-
       this.emit(`status:${server.uuid}`, { status: 'online', pid: child.pid });
       return true;
 
     } catch (e: any) {
       this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Launch failed: ${e.message}`);
+      ServerModel.updateRuntimeState(server.id, 'offline', null);
       return false;
     }
   }

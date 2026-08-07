@@ -38,8 +38,10 @@ app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
 // Static Folder
 app.use(express_1.default.static(path_1.default.join(process.cwd(), 'public')));
+const sessionStore_1 = require("./services/sessionStore");
 // Express Session
 app.use((0, express_session_1.default)({
+    store: new sessionStore_1.SQLiteSessionStore(),
     secret: config_1.CONFIG.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
