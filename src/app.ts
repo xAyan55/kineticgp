@@ -46,6 +46,7 @@ app.use(session({
   secret: CONFIG.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
     httpOnly: true,
     sameSite: 'lax',

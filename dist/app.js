@@ -43,6 +43,7 @@ app.use((0, express_session_1.default)({
     secret: config_1.CONFIG.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
         httpOnly: true,
         sameSite: 'lax',

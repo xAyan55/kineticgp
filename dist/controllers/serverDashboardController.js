@@ -11,7 +11,7 @@ const serverModel_1 = require("../models/serverModel");
 const userModel_1 = require("../models/userModel");
 const processManager_1 = require("../services/processManager");
 const fileManagerService_1 = require("../services/fileManagerService");
-const minecraftJarService_1 = require("../services/minecraftJarService");
+const installationWorker_1 = require("../services/installationWorker");
 const activityModel_1 = require("../models/activityModel");
 const settingModel_1 = require("../models/settingModel");
 const storage = multer_1.default.diskStorage({
@@ -104,7 +104,11 @@ class ServerDashboardController {
         const consoleListener = (logLine) => {
             res.write(`event: log\ndata: ${JSON.stringify({ message: logLine })}\n\n`);
         };
+        const progressListener = (progData) => {
+            res.write(`event: progress\ndata: ${JSON.stringify(progData)}\n\n`);
+        };
         processMgr.on(`console:${server.uuid}`, consoleListener);
+        processMgr.on(`progress:${server.uuid}`, progressListener);
         // Send metrics ticker every 3 seconds
         const interval = setInterval(() => {
             const metrics = processMgr.getLiveMetrics(server);
@@ -112,6 +116,7 @@ class ServerDashboardController {
         }, 3000);
         req.on('close', () => {
             processMgr.off(`console:${server.uuid}`, consoleListener);
+            processMgr.off(`progress:${server.uuid}`, progressListener);
             clearInterval(interval);
             res.end();
         });
@@ -318,16 +323,13 @@ class ServerDashboardController {
         const { user, server } = auth;
         const { name, description, ram_limit, version, software, startup_command, action } = req.body;
         if (action === 'reinstall') {
-            minecraftJarService_1.MinecraftJarService.installServer(server.uuid, String(software || server.software), String(version || server.version), server.port, server.name)
-                .then(() => {
-                activityModel_1.ActivityModel.log(user.id, user.username, 'SERVER_REINSTALL', `Reinstalled server jar "${server.name}" to ${software} ${version}`, req.ip || '127.0.0.1');
-            })
-                .catch(() => { });
             serverModel_1.ServerModel.updateSettings(server.id, {
                 version: String(version || server.version),
                 software: String(software || server.software)
             });
-            return res.redirect(`/dashboard/server/${server.uuid}/settings?msg=reinstalling`);
+            installationWorker_1.InstallationWorker.enqueue(server.uuid);
+            activityModel_1.ActivityModel.log(user.id, user.username, 'SERVER_REINSTALL', `Queued server jar reinstallation for "${server.name}" to ${software} ${version}`, req.ip || '127.0.0.1');
+            return res.redirect(`/dashboard/server/${server.uuid}/console`);
         }
         serverModel_1.ServerModel.updateSettings(server.id, {
             name: String(name || server.name).trim(),

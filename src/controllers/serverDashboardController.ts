@@ -7,6 +7,7 @@ import { UserModel } from '../models/userModel';
 import { ProcessManager } from '../services/processManager';
 import { FileManagerService } from '../services/fileManagerService';
 import { MinecraftJarService } from '../services/minecraftJarService';
+import { InstallationWorker } from '../services/installationWorker';
 import { ActivityModel } from '../models/activityModel';
 import { SettingModel } from '../models/settingModel';
 
@@ -113,7 +114,12 @@ export class ServerDashboardController {
       res.write(`event: log\ndata: ${JSON.stringify({ message: logLine })}\n\n`);
     };
 
+    const progressListener = (progData: any) => {
+      res.write(`event: progress\ndata: ${JSON.stringify(progData)}\n\n`);
+    };
+
     processMgr.on(`console:${server.uuid}`, consoleListener);
+    processMgr.on(`progress:${server.uuid}`, progressListener);
 
     // Send metrics ticker every 3 seconds
     const interval = setInterval(() => {
@@ -123,6 +129,7 @@ export class ServerDashboardController {
 
     req.on('close', () => {
       processMgr.off(`console:${server.uuid}`, consoleListener);
+      processMgr.off(`progress:${server.uuid}`, progressListener);
       clearInterval(interval);
       res.end();
     });
@@ -352,18 +359,15 @@ export class ServerDashboardController {
     const { name, description, ram_limit, version, software, startup_command, action } = req.body;
 
     if (action === 'reinstall') {
-      MinecraftJarService.installServer(server.uuid, String(software || server.software), String(version || server.version), server.port, server.name)
-        .then(() => {
-          ActivityModel.log(user.id, user.username, 'SERVER_REINSTALL', `Reinstalled server jar "${server.name}" to ${software} ${version}`, req.ip || '127.0.0.1');
-        })
-        .catch(() => {});
-
       ServerModel.updateSettings(server.id, {
         version: String(version || server.version),
         software: String(software || server.software)
       });
 
-      return res.redirect(`/dashboard/server/${server.uuid}/settings?msg=reinstalling`);
+      InstallationWorker.enqueue(server.uuid);
+      ActivityModel.log(user.id, user.username, 'SERVER_REINSTALL', `Queued server jar reinstallation for "${server.name}" to ${software} ${version}`, req.ip || '127.0.0.1');
+
+      return res.redirect(`/dashboard/server/${server.uuid}/console`);
     }
 
     ServerModel.updateSettings(server.id, {
