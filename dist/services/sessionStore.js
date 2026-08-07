@@ -10,30 +10,35 @@ class SQLiteSessionStore extends express_session_1.default.Store {
     constructor() {
         super();
         // Ensure sessions table exists
-        database_1.db.exec(`
-      CREATE TABLE IF NOT EXISTS sessions (
-        sid TEXT PRIMARY KEY,
-        sess TEXT NOT NULL,
-        expired INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
-    `);
+        try {
+            database_1.db.exec(`
+        CREATE TABLE IF NOT EXISTS sessions (
+          sid TEXT PRIMARY KEY,
+          sess TEXT NOT NULL,
+          expired INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
+      `);
+        }
+        catch (e) {
+            console.error('Failed to create sessions table:', e);
+        }
     }
-    get(sid, callback) {
+    get = (sid, callback) => {
         try {
             const now = Date.now();
             const row = database_1.db.prepare('SELECT sess FROM sessions WHERE sid = ? AND expired > ?').get(sid, now);
-            if (!row) {
+            if (!row || !row.sess) {
                 return callback(null, null);
             }
             const sessData = JSON.parse(row.sess);
             callback(null, sessData);
         }
         catch (err) {
-            callback(err);
+            callback(null, null);
         }
-    }
-    set(sid, sessData, callback) {
+    };
+    set = (sid, sessData, callback) => {
         try {
             const maxAge = sessData.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000;
             const expired = Date.now() + maxAge;
@@ -50,8 +55,8 @@ class SQLiteSessionStore extends express_session_1.default.Store {
             if (callback)
                 callback(err);
         }
-    }
-    destroy(sid, callback) {
+    };
+    destroy = (sid, callback) => {
         try {
             database_1.db.prepare('DELETE FROM sessions WHERE sid = ?').run(sid);
             if (callback)
@@ -61,9 +66,9 @@ class SQLiteSessionStore extends express_session_1.default.Store {
             if (callback)
                 callback(err);
         }
-    }
-    touch(sid, sessData, callback) {
+    };
+    touch = (sid, sessData, callback) => {
         this.set(sid, sessData, callback);
-    }
+    };
 }
 exports.SQLiteSessionStore = SQLiteSessionStore;

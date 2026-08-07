@@ -5,31 +5,35 @@ export class SQLiteSessionStore extends session.Store {
   constructor() {
     super();
     // Ensure sessions table exists
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS sessions (
-        sid TEXT PRIMARY KEY,
-        sess TEXT NOT NULL,
-        expired INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
-    `);
+    try {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS sessions (
+          sid TEXT PRIMARY KEY,
+          sess TEXT NOT NULL,
+          expired INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
+      `);
+    } catch (e) {
+      console.error('Failed to create sessions table:', e);
+    }
   }
 
-  get(sid: string, callback: (err: any, session?: session.SessionData | null) => void): void {
+  public get = (sid: string, callback: (err: any, session?: session.SessionData | null) => void): void => {
     try {
       const now = Date.now();
       const row = db.prepare('SELECT sess FROM sessions WHERE sid = ? AND expired > ?').get(sid, now) as { sess: string } | undefined;
-      if (!row) {
+      if (!row || !row.sess) {
         return callback(null, null);
       }
       const sessData = JSON.parse(row.sess);
       callback(null, sessData);
     } catch (err) {
-      callback(err);
+      callback(null, null);
     }
-  }
+  };
 
-  set(sid: string, sessData: session.SessionData, callback?: (err?: any) => void): void {
+  public set = (sid: string, sessData: session.SessionData, callback?: (err?: any) => void): void => {
     try {
       const maxAge = sessData.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000;
       const expired = Date.now() + maxAge;
@@ -45,18 +49,18 @@ export class SQLiteSessionStore extends session.Store {
     } catch (err) {
       if (callback) callback(err);
     }
-  }
+  };
 
-  destroy(sid: string, callback?: (err?: any) => void): void {
+  public destroy = (sid: string, callback?: (err?: any) => void): void => {
     try {
       db.prepare('DELETE FROM sessions WHERE sid = ?').run(sid);
       if (callback) callback(null);
     } catch (err) {
       if (callback) callback(err);
     }
-  }
+  };
 
-  touch(sid: string, sessData: session.SessionData, callback?: (err?: any) => void): void {
+  public touch = (sid: string, sessData: session.SessionData, callback?: (err?: any) => void): void => {
     this.set(sid, sessData, callback);
-  }
+  };
 }
