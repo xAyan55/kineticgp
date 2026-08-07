@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ServerModel } from '../models/serverModel';
 import { UserModel } from '../models/userModel';
-import { MinecraftJarService } from '../services/minecraftJarService';
+import { InstallationWorker } from '../services/installationWorker';
 import { ActivityModel } from '../models/activityModel';
 import { SettingModel } from '../models/settingModel';
 
@@ -42,25 +42,44 @@ export class AdminServerController {
     });
   }
 
-  static async postCreateServer(req: Request, res: Response): Promise<void> {
+  // GET /admin/servers/create (Dedicated Creation Page)
+  static getCreateServer(req: Request, res: Response): void {
+    const adminUser = UserModel.findById(req.session.userId!);
+    if (!adminUser) return res.redirect('/login');
+
+    const allUsers = UserModel.findAll();
+    const settings = SettingModel.getAll();
+
+    res.render('admin/server-create', {
+      title: 'Create Minecraft Server',
+      user: adminUser,
+      allUsers,
+      settings,
+      msg: req.query.msg || null,
+      err: req.query.err || null
+    });
+  }
+
+  // POST /admin/servers/create (Instant Creation & Background Queueing)
+  static postCreateServer(req: Request, res: Response): void {
     const adminUser = UserModel.findById(req.session.userId!)!;
     const { name, description, owner_id, version, software, java_version, ram_limit, cpu_limit, disk_limit } = req.body;
 
     if (!name || !owner_id) {
-      return res.redirect('/admin/servers?err=missing_fields');
+      return res.redirect('/admin/servers/create?err=missing_fields');
     }
 
     const ownerIdNum = parseInt(String(owner_id), 10);
     const owner = UserModel.findById(ownerIdNum);
     if (!owner) {
-      return res.redirect('/admin/servers?err=owner_not_found');
+      return res.redirect('/admin/servers/create?err=owner_not_found');
     }
 
     const cleanVersion = String(version || '1.20.4').trim();
     const cleanSoftware = String(software || 'Paper').trim();
     const cleanJava = String(java_version || '21').trim();
 
-    // 1. Create DB Record
+    // 1. Instantly Create Database Record with status 'installing'
     const newServer = ServerModel.create({
       user_id: ownerIdNum,
       name: String(name).trim(),
@@ -75,18 +94,11 @@ export class AdminServerController {
 
     ActivityModel.log(adminUser.id, adminUser.username, 'ADMIN_SERVER_CREATE', `Created server "${newServer.name}" (UUID: ${newServer.uuid}) for user ${owner.username}`, req.ip || '127.0.0.1');
 
-    // 2. Install Server JAR & Files asynchronously on next event loop tick
-    setImmediate(() => {
-      MinecraftJarService.installServer(newServer.uuid, cleanSoftware, cleanVersion, newServer.port, newServer.name)
-        .then(() => {
-          console.log(`✅ Background Jar install finished for ${newServer.name}`);
-        })
-        .catch((err) => {
-          console.error(`❌ Background Jar install error for ${newServer.name}:`, err);
-        });
-    });
+    // 2. Queue Background Installation Worker
+    InstallationWorker.enqueue(newServer.uuid);
 
-    res.redirect('/admin/servers?msg=server_created');
+    // 3. Immediately redirect browser to the server console (< 30ms)
+    res.redirect(`/dashboard/server/${newServer.uuid}/console`);
   }
 
   static postToggleSuspendServer(req: Request, res: Response): void {
@@ -137,5 +149,18 @@ export class AdminServerController {
     ActivityModel.log(adminUser.id, adminUser.username, 'ADMIN_SERVER_DELETE', `Deleted server "${server.name}" (UUID: ${server.uuid})`, req.ip || '127.0.0.1');
 
     res.redirect('/admin/servers?msg=server_deleted');
+  }
+
+  static postRetryInstallation(req: Request, res: Response): void {
+    const adminUser = UserModel.findById(req.session.userId!)!;
+    const serverId = parseInt(String(req.params.id), 10);
+    const server = ServerModel.findById(serverId);
+
+    if (!server) return res.redirect('/admin/servers?err=server_not_found');
+
+    InstallationWorker.retry(server.uuid);
+    ActivityModel.log(adminUser.id, adminUser.username, 'ADMIN_SERVER_RETRY_INSTALL', `Retried installation for server "${server.name}"`, req.ip || '127.0.0.1');
+
+    res.redirect(`/dashboard/server/${server.uuid}/console`);
   }
 }

@@ -31,7 +31,7 @@ export interface Server {
   port: number;
   startup_command: string;
   auto_restart: number; // 0 or 1
-  status: 'online' | 'starting' | 'stopping' | 'offline';
+  status: 'queued' | 'installing' | 'downloading' | 'configuring' | 'online' | 'starting' | 'stopping' | 'offline' | 'failed';
   pid?: number | null;
   players_online: number;
   max_players: number;

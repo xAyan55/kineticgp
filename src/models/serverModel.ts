@@ -173,7 +173,7 @@ export class ServerModel {
 
     const stmt = db.prepare(`
       INSERT INTO servers (uuid, user_id, name, description, game, version, software, java_version, ram_limit, cpu_limit, disk_limit, directory, jar_file, ip_address, port, startup_command, auto_restart, status)
-      VALUES (?, ?, ?, ?, 'Minecraft', ?, ?, ?, ?, ?, ?, ?, ?, '127.0.0.1', ?, ?, 1, 'offline')
+      VALUES (?, ?, ?, ?, 'Minecraft', ?, ?, ?, ?, ?, ?, ?, ?, '127.0.0.1', ?, ?, 1, 'installing')
     `);
 
     const info = stmt.run(
@@ -196,7 +196,13 @@ export class ServerModel {
     return this.findById(info.lastInsertRowid as number)!;
   }
 
-  static updateRuntimeState(id: number, status: 'online' | 'starting' | 'stopping' | 'offline', pid: number | null): boolean {
+  static updateStatus(id: number, status: Server['status']): boolean {
+    const stmt = db.prepare('UPDATE servers SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    const result = stmt.run(status, id);
+    return result.changes > 0;
+  }
+
+  static updateRuntimeState(id: number, status: Server['status'], pid: number | null): boolean {
     let query = 'UPDATE servers SET status = ?, pid = ?, updated_at = CURRENT_TIMESTAMP';
     if (status === 'online') {
       query += ', last_started = CURRENT_TIMESTAMP';
