@@ -172,8 +172,8 @@ export class ServerModel {
     const startup_command = 'java -Xms128M -Xmx{ram}M -jar {jar_file} --nogui';
 
     const stmt = db.prepare(`
-      INSERT INTO servers (uuid, user_id, name, description, game, version, software, java_version, ram_limit, cpu_limit, disk_limit, directory, jar_file, port, startup_command, auto_restart, status)
-      VALUES (?, ?, ?, ?, 'Minecraft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'offline')
+      INSERT INTO servers (uuid, user_id, name, description, game, version, software, java_version, ram_limit, cpu_limit, disk_limit, directory, jar_file, ip_address, port, startup_command, auto_restart, status)
+      VALUES (?, ?, ?, ?, 'Minecraft', ?, ?, ?, ?, ?, ?, ?, ?, '127.0.0.1', ?, ?, 1, 'offline')
     `);
 
     const info = stmt.run(

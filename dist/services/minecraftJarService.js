@@ -20,7 +20,7 @@ class MinecraftJarService extends events_1.EventEmitter {
     static async downloadFile(url, destPath, onProgress) {
         return new Promise((resolve, reject) => {
             const client = url.startsWith('https') ? https_1.default : http_1.default;
-            const req = client.get(url, (res) => {
+            const req = client.get(url, { timeout: 30000 }, (res) => {
                 // Handle HTTP redirects (301, 302, 307, 308)
                 if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
                     return this.downloadFile(res.headers.location, destPath, onProgress).then(resolve).catch(reject);
@@ -48,6 +48,10 @@ class MinecraftJarService extends events_1.EventEmitter {
                     reject(err);
                 });
             });
+            req.on('timeout', () => {
+                req.destroy();
+                reject(new Error('Download connection timed out'));
+            });
             req.on('error', (err) => {
                 fs_1.default.unlink(destPath, () => { });
                 reject(err);
@@ -57,7 +61,7 @@ class MinecraftJarService extends events_1.EventEmitter {
     static async fetchJson(url) {
         return new Promise((resolve, reject) => {
             const client = url.startsWith('https') ? https_1.default : http_1.default;
-            client.get(url, (res) => {
+            const req = client.get(url, { timeout: 10000 }, (res) => {
                 if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
                     return this.fetchJson(res.headers.location).then(resolve).catch(reject);
                 }
@@ -74,7 +78,12 @@ class MinecraftJarService extends events_1.EventEmitter {
                         reject(e);
                     }
                 });
-            }).on('error', reject);
+            });
+            req.on('timeout', () => {
+                req.destroy();
+                reject(new Error('JSON fetch timed out'));
+            });
+            req.on('error', reject);
         });
     }
     static async resolveDownloadUrl(software, version) {

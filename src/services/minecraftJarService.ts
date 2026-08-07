@@ -17,7 +17,7 @@ export class MinecraftJarService extends EventEmitter {
     return new Promise((resolve, reject) => {
       const client = url.startsWith('https') ? https : http;
       
-      const req = client.get(url, (res) => {
+      const req = client.get(url, { timeout: 30000 }, (res) => {
         // Handle HTTP redirects (301, 302, 307, 308)
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           return this.downloadFile(res.headers.location, destPath, onProgress).then(resolve).catch(reject);
@@ -53,6 +53,11 @@ export class MinecraftJarService extends EventEmitter {
         });
       });
 
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Download connection timed out'));
+      });
+
       req.on('error', (err) => {
         fs.unlink(destPath, () => {});
         reject(err);
@@ -63,7 +68,7 @@ export class MinecraftJarService extends EventEmitter {
   static async fetchJson<T>(url: string): Promise<T> {
     return new Promise((resolve, reject) => {
       const client = url.startsWith('https') ? https : http;
-      client.get(url, (res) => {
+      const req = client.get(url, { timeout: 10000 }, (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           return this.fetchJson<T>(res.headers.location).then(resolve).catch(reject);
         }
@@ -79,7 +84,12 @@ export class MinecraftJarService extends EventEmitter {
             reject(e);
           }
         });
-      }).on('error', reject);
+      });
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('JSON fetch timed out'));
+      });
+      req.on('error', reject);
     });
   }
 
