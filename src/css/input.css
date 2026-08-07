@@ -1,0 +1,168 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dark: #101213;
+  --light-dark: #1a1c1e;
+  --semi-dark: #2b2f32;
+  --blue: #1873d3;
+  --blue-hover: #1462b8;
+  --gray: #686a6b;
+  --white: #ffffff;
+  --light: #e6e8e9;
+  --yellow: #eeca02;
+  --red: #e94b35;
+  --green: #10b981;
+}
+
+body {
+  background-color: var(--dark);
+  color: var(--light);
+  font-family: 'Poppins', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--semi-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--blue);
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(26, 28, 30, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-nav {
+  background: rgba(16, 18, 19, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Base Card Style */
+.kgp-card {
+  background-color: var(--light-dark);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  box-shadow: 0 8px 18px -14px rgba(0, 0, 0, 0.5);
+  transition: transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease;
+}
+
+.kgp-card:hover {
+  border-color: rgba(24, 115, 211, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Reusable Buttons */
+.btn-kinetic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--blue);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  transition: all 150ms ease;
+  box-shadow: 0 4px 12px rgba(24, 115, 211, 0.3);
+}
+
+.btn-kinetic:hover {
+  background-color: var(--blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(24, 115, 211, 0.4);
+}
+
+.btn-kinetic:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--semi-dark);
+  color: var(--light);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 150ms ease;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--white);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--red);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  transition: all 150ms ease;
+}
+
+.btn-danger:hover {
+  background-color: #c93b27;
+  transform: translateY(-1px);
+}
+
+/* Animations */
+[data-animate="fade-up"] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1), transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-animate="fade-up"].animated,
+body:not(.js-loaded) [data-animate="fade-up"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Accordion Smooth Expand */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 250ms cubic-bezier(0.16, 1, 0.3, 1), opacity 250ms ease;
+  opacity: 0;
+}
+
+.accordion-content.open {
+  opacity: 1;
+}
+
+/* Focus Rings */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}

@@ -1,0 +1,266 @@
+<%- include('layouts/header', { title: 'Self-Hosted Minecraft Server Panel' }) %>
+
+<%- include('components/navbar') %>
+
+<!-- HERO SECTION -->
+<section class="relative min-h-screen flex items-center justify-center pt-24 pb-16 overflow-hidden">
+  <!-- Background Video -->
+  <video class="absolute inset-0 w-full h-full object-cover z-0" autoplay loop muted playsinline>
+    <source src="/images/bgs/bg.mp4" type="video/mp4">
+  </video>
+
+  <!-- Rich Colored Gradient Overlays over Video -->
+  <div class="absolute inset-0 bg-gradient-to-r from-[#101213]/95 via-[#101213]/75 to-[#1873d3]/30 z-10"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-[#101213]/60 via-transparent to-[#101213] z-10"></div>
+
+  <div class="relative z-20 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <!-- Left Content -->
+      <div class="lg:col-span-7 space-y-6 text-left" data-animate="fade-up">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1873d3]/20 border border-[#1873d3]/40 text-[#1873d3] text-xs sm:text-sm font-semibold uppercase tracking-wider shadow-lg backdrop-blur-md">
+          <span>⚡ Self-Hosted Minecraft Management</span>
+        </div>
+        
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
+          Gamers <span class="text-[#1873d3] drop-shadow-[0_2px_12px_rgba(24,115,211,0.5)]">Don't Fear</span> The Apocalypse
+        </h1>
+        
+        <p class="text-base sm:text-lg text-neutral-200 max-w-2xl leading-relaxed">
+          KineticGP delivers ultimate control over your Minecraft servers. Designed with extreme precision, minimal latency, automated backups, and real-time resource analytics.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-4 pt-4">
+          <a href="/dashboard" class="btn-kinetic text-base py-3.5 px-7">
+            <span>Start Your Server</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </a>
+          <a href="#features" class="btn-secondary text-base py-3.5 px-7">
+            Explore Features
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Artwork (Ideal middle size floating Minecraft clipart) -->
+      <div class="lg:col-span-5 flex justify-center lg:justify-end" data-animate="fade-up">
+        <div class="relative max-w-2xl w-full flex items-center justify-center lg:justify-end">
+          <img src="/images/banners/mc-art.png" alt="Minecraft Artwork" class="w-full max-h-[640px] object-contain drop-shadow-[0_30px_45px_rgba(0,0,0,0.8)] hover:scale-105 transition-transform duration-300 transform lg:translate-x-4">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES SECTION -->
+<section id="features" class="py-24 bg-[#101213] relative border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+        Engineered For Performance & Control
+      </h2>
+      <p class="text-neutral-400 text-sm sm:text-base">
+        Everything you need to host, monitor, and scale Minecraft servers without complexity.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Feature Card 1 -->
+      <div class="kgp-card p-8 group">
+        <div class="w-12 h-12 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-3">DDoS Protection</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">
+          Enterprise-grade OVH Game DDoS protection reliably filters malicious traffic and shields your servers 24/7.
+        </p>
+      </div>
+
+      <!-- Feature Card 2 -->
+      <div class="kgp-card p-8 group">
+        <div class="w-12 h-12 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-3">Personal Backups</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">
+          Automated world snapshots and instantaneous restore controls guarantee your world data is safe from corruption.
+        </p>
+      </div>
+
+      <!-- Feature Card 3 -->
+      <div class="kgp-card p-8 group">
+        <div class="w-12 h-12 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-3">Fast Processors</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">
+          Powered by high frequency single-core CPUs optimized specifically for Minecraft server tick rate stability.
+        </p>
+      </div>
+
+      <!-- Feature Card 4 -->
+      <div class="kgp-card p-8 group">
+        <div class="w-12 h-12 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9 6 9-6M3 7l9-6 9 6"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-3">Full File Access</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">
+          Direct SFTP & Web File Browser access to configure plugins, world folders, logs, and server.properties directly.
+        </p>
+      </div>
+
+      <!-- Feature Card 5 -->
+      <div class="kgp-card p-8 group">
+        <div class="w-12 h-12 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-3">Instant Actions</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">
+          One-click start, stop, and restart triggers with instant console feedback and live telemetry resource gauges.
+        </p>
+      </div>
+
+      <!-- Feature Card 6 -->
+      <div class="kgp-card p-8 group">
+        <div class="w-12 h-12 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-3">Satisfied Communities</h3>
+        <p class="text-neutral-400 text-sm leading-relaxed">
+          Built for server admins who demand zero bloat, high responsiveness, and zero unnecessary gaming neon UI clutter.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS SECTION -->
+<section id="reviews" class="relative py-24 overflow-hidden" style="background-image: url('/images/bgs/review-bg.png'); background-size: cover; background-position: center;">
+  <!-- 40% Dark Overlay -->
+  <div class="absolute inset-0 bg-[#101213]/80 backdrop-blur-sm z-10"></div>
+
+  <div class="relative z-20 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+        Our Customers Know Us Best
+      </h2>
+      <div class="flex items-center justify-center gap-1.5 mb-2">
+        <img src="/images/star.svg" alt="Star" class="w-5 h-5">
+        <img src="/images/star.svg" alt="Star" class="w-5 h-5">
+        <img src="/images/star.svg" alt="Star" class="w-5 h-5">
+        <img src="/images/star.svg" alt="Star" class="w-5 h-5">
+        <img src="/images/star.svg" alt="Star" class="w-5 h-5">
+      </div>
+      <p class="text-neutral-300 text-sm">Verified 5-Star Community Feedback</p>
+    </div>
+
+    <div id="reviewsCarousel" class="max-w-3xl mx-auto relative">
+      <!-- Slide 1 -->
+      <div class="review-slide kgp-card p-8 sm:p-10 text-center">
+        <h3 class="text-2xl font-bold text-white mb-4">"Excellent service and speed!"</h3>
+        <p class="text-neutral-300 text-base sm:text-lg leading-relaxed mb-6 italic">
+          "Switching to KineticGP was the best decision for our community. The panel setup took less than two minutes, and our server has been running 24/7 without a single hiccup!"
+        </p>
+        <div class="font-semibold text-[#1873d3] text-base">— John Doe, SMP Owner</div>
+      </div>
+
+      <!-- Slide 2 -->
+      <div class="review-slide kgp-card p-8 sm:p-10 text-center hidden">
+        <h3 class="text-2xl font-bold text-white mb-4">"Best performance for modded servers"</h3>
+        <p class="text-neutral-300 text-base sm:text-lg leading-relaxed mb-6 italic">
+          "I run a heavily modded Minecraft server with 30+ players. Other panels lagged, but KineticGP's clean UI handles telemetry effortlessly!"
+        </p>
+        <div class="font-semibold text-[#1873d3] text-base">— Ana Yaris, Network Admin</div>
+      </div>
+
+      <!-- Slide 3 -->
+      <div class="review-slide kgp-card p-8 sm:p-10 text-center hidden">
+        <h3 class="text-2xl font-bold text-white mb-4">"All recommendations!"</h3>
+        <p class="text-neutral-300 text-base sm:text-lg leading-relaxed mb-6 italic">
+          "Exceptional control panel, intuitive layout, and zero neon fluff. They make managing game servers extremely easy. Will keep hosting all my projects here."
+        </p>
+        <div class="font-semibold text-[#1873d3] text-base">— Bryan Pyan, Developer</div>
+      </div>
+
+      <!-- Carousel Controls -->
+      <div class="flex items-center justify-center gap-4 mt-8">
+        <button id="prevReview" aria-label="Previous Review" class="w-10 h-10 rounded-full bg-[#1a1c1e] border border-white/10 text-white flex items-center justify-center hover:border-[#1873d3] transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="nextReview" aria-label="Next Review" class="w-10 h-10 rounded-full bg-[#1a1c1e] border border-white/10 text-white flex items-center justify-center hover:border-[#1873d3] transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQS SECTION -->
+<section id="faq" class="py-24 bg-[#101213] border-t border-white/5">
+  <div class="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+        Frequently Asked Questions
+      </h2>
+      <p class="text-neutral-400 text-sm sm:text-base">
+        Got questions about KineticGP panel? We've got answers.
+      </p>
+    </div>
+
+    <div class="space-y-4">
+      <!-- FAQ 1 -->
+      <div class="faq-item kgp-card overflow-hidden">
+        <button class="faq-button w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none">
+          <span class="text-base sm:text-lg font-semibold text-white">How do I deploy KineticGP on my VPS?</span>
+          <svg class="faq-icon w-5 h-5 text-[#1873d3] transition-transform duration-250" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="accordion-content px-6">
+          <div class="pb-6 text-sm text-neutral-400 leading-relaxed">
+            KineticGP runs natively on any Node.js 18+ environment with zero complex dependencies. Simply clone the repository, build static assets, and start with PM2 or systemd.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="faq-item kgp-card overflow-hidden">
+        <button class="faq-button w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none">
+          <span class="text-base sm:text-lg font-semibold text-white">Does KineticGP support Paper, Spigot, and Forge?</span>
+          <svg class="faq-icon w-5 h-5 text-[#1873d3] transition-transform duration-250" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="accordion-content px-6">
+          <div class="pb-6 text-sm text-neutral-400 leading-relaxed">
+            Yes! KineticGP is fully compatible with all Java Minecraft server jars including Vanilla, Paper, Purpur, Spigot, Forge, Fabric, and Velocity proxy nodes.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="faq-item kgp-card overflow-hidden">
+        <button class="faq-button w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none">
+          <span class="text-base sm:text-lg font-semibold text-white">Is database authentication local and secure?</span>
+          <svg class="faq-icon w-5 h-5 text-[#1873d3] transition-transform duration-250" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="accordion-content px-6">
+          <div class="pb-6 text-sm text-neutral-400 leading-relaxed">
+            All authentication uses SQLite via Better-SQLite3 with salted bcrypt password hashing, CSRF double-submit protection, HTTPOnly session cookies, and IP rate-limiting.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="faq-item kgp-card overflow-hidden">
+        <button class="faq-button w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none">
+          <span class="text-base sm:text-lg font-semibold text-white">How does default avatar selection work?</span>
+          <svg class="faq-icon w-5 h-5 text-[#1873d3] transition-transform duration-250" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="accordion-content px-6">
+          <div class="pb-6 text-sm text-neutral-400 leading-relaxed">
+            Upon first registration, the panel automatically assigns a high-resolution Steve or Alex head avatar. Users can customize or update their avatar at any time in Profile Settings.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('components/footer') %>
+
+<%- include('layouts/footer', { script: 'faq' }) %>

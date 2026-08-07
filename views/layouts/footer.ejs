@@ -1,0 +1,8 @@
+  <%- include('../components/toast') %>
+
+  <script src="/js/main.js?v=1.0"></script>
+  <% if (typeof script !== 'undefined' && script) { %>
+    <script src="/js/<%= script %>.js?v=1.0" defer></script>
+  <% } %>
+</body>
+</html>
