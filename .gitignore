@@ -1,5 +1,4 @@
 node_modules/
-dist/
 storage/database.sqlite
 .env
 temp_kinetic/
