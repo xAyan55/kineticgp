@@ -63,13 +63,15 @@ else
   cd "$INSTALL_DIR"
 fi
 
-# Step 5: Install NPM packages and build static assets
-echo -e "${BLUE}🔹 Step 4/5: Installing dependencies and building production assets...${NC}"
+# Step 5: Install NPM packages, rebuild native binaries, and build static assets
+echo -e "${BLUE}🔹 Step 4/5: Installing dependencies, rebuilding native modules & building assets...${NC}"
 npm install --production=false
+npm rebuild better-sqlite3 || npm rebuild
 npm run build
 
-# Ensure storage directory exists
+# Ensure storage directory exists with proper write permissions
 mkdir -p storage public/images/banners
+chmod -R 777 storage
 
 # Step 6: Start with PM2
 echo -e "${BLUE}🔹 Step 5/5: Starting KineticGP service with PM2...${NC}"
