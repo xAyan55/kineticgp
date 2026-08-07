@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^11.0.0",
     "compression": "^1.8.0",
     "cookie-parser": "^1.4.7",
     "csrf-csrf": "^3.1.0",
