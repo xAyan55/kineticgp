@@ -4,6 +4,8 @@ import path from 'path';
 import { requireAdmin, requireSuperAdmin } from '../middleware/adminMiddleware';
 import { AdminController } from '../controllers/adminController';
 
+import adminServerRoutes from './adminServerRoutes';
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, path.join(process.cwd(), 'public', 'images'));
@@ -23,6 +25,9 @@ router.use(requireAdmin);
 
 // Overview
 router.get('/', AdminController.getOverview);
+
+// Servers Management
+router.use('/servers', adminServerRoutes);
 
 // Nodes Management
 router.get('/nodes', AdminController.getNodes);

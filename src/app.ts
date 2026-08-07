@@ -14,6 +14,7 @@ import authRoutes from './routes/authRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import profileRoutes from './routes/profileRoutes';
 import adminRoutes from './routes/adminRoutes';
+import serverDashboardRoutes from './routes/serverDashboardRoutes';
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use('/', landingRoutes);
 app.use('/', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/dashboard/profile', profileRoutes);
+app.use('/dashboard/server', serverDashboardRoutes);
 app.use('/admin', adminRoutes);
 
 // 404 Handler

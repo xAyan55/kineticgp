@@ -1,0 +1,46 @@
+<%- include('../layouts/header', { title: title }) %>
+
+<div class="min-h-screen bg-[#101213] flex flex-col lg:flex-row">
+  <%- include('../components/sidebar') %>
+
+  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+    <!-- Top Bar / Breadcrumb Navigation -->
+    <header class="h-16 px-6 lg:px-10 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-sm text-neutral-400">
+        <span class="text-white font-medium">Servers</span>
+        <span>/</span>
+        <span class="text-[#1873d3] font-medium"><%= server.name %></span>
+        <span>/</span>
+        <a href="/dashboard/server/<%= server.uuid %>/files" class="text-neutral-400 hover:text-white">Files</a>
+        <span>/</span>
+        <span class="text-white font-mono"><%= filename %></span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="/dashboard/server/<%= server.uuid %>/files" class="btn-secondary text-xs">Back to Files</a>
+        <button form="editFileForm" type="submit" class="btn-primary text-xs flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Save File
+        </button>
+      </div>
+    </header>
+
+    <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-6 flex-1 flex flex-col">
+      <form id="editFileForm" method="POST" action="/dashboard/server/<%= server.uuid %>/files/save" class="flex-1 flex flex-col space-y-4">
+        <input type="hidden" name="_csrf" value="<%= _csrf %>">
+        <input type="hidden" name="filePath" value="<%= filePath %>">
+
+        <div class="kgp-card p-4 sm:p-6 flex-1 flex flex-col space-y-3 bg-[#0d0e0f] border-white/10">
+          <div class="flex items-center justify-between border-b border-white/5 pb-3 text-xs">
+            <span class="font-mono text-neutral-400">Editing: <%= filePath %></span>
+            <span class="text-neutral-500 font-mono">UTF-8</span>
+          </div>
+
+          <textarea name="content" rows="24" class="flex-1 w-full p-4 rounded-xl bg-[#0a0b0c] border border-white/5 font-mono text-xs text-neutral-200 focus:outline-none focus:border-[#1873d3] leading-relaxed custom-scrollbar"><%= content %></textarea>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<%- include('../layouts/footer', { script: null }) %>

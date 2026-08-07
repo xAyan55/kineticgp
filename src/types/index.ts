@@ -15,21 +15,62 @@ export interface User {
 
 export interface Server {
   id: number;
+  uuid: string;
+  user_id: number;
   name: string;
+  description: string;
   game: string;
-  status: 'online' | 'starting' | 'stopping' | 'offline';
-  ip_address: string;
+  version: string;
+  software: string;
+  java_version: string;
+  ram_limit: number; // MB
+  cpu_limit: number; // %
+  disk_limit: number; // GB
+  directory: string;
+  jar_file: string;
   port: number;
+  startup_command: string;
+  auto_restart: number; // 0 or 1
+  status: 'online' | 'starting' | 'stopping' | 'offline';
+  pid?: number | null;
   players_online: number;
   max_players: number;
-  cpu_usage: number; // percentage
+  cpu_usage: number; // %
   memory_usage: number; // MB
-  max_memory: number; // MB
   disk_usage: number; // GB
-  max_disk: number; // GB
-  user_id: number;
+  suspended: number; // 0 or 1
+  owner_name?: string;
+  owner_email?: string;
+  last_started?: string | null;
+  last_stopped?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FileItem {
+  name: string;
+  path: string;
+  size: number;
+  formattedSize: string;
+  isDir: boolean;
+  modified: string;
+  permissions?: string;
+  extension?: string;
+}
+
+export interface ServerLogEntry {
+  id: number;
+  server_id: number;
+  message: string;
+  created_at: string;
+}
+
+export interface ServerEventEntry {
+  id: number;
+  server_id: number;
+  event: string;
+  details: string;
+  created_at: string;
 }
 
 export interface NodeInfo {
@@ -99,4 +140,3 @@ declare module 'express-session' {
     csrfSecret?: string;
   }
 }
-

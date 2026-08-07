@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminMiddleware_1 = require("../middleware/adminMiddleware");
+const adminServerController_1 = require("../controllers/adminServerController");
+const router = (0, express_1.Router)();
+router.use(adminMiddleware_1.requireAdmin);
+router.get('/', adminServerController_1.AdminServerController.getServers);
+router.post('/create', adminServerController_1.AdminServerController.postCreateServer);
+router.post('/:id/suspend', adminServerController_1.AdminServerController.postToggleSuspendServer);
+router.post('/:id/owner', adminServerController_1.AdminServerController.postChangeOwner);
+router.post('/:id/delete', adminServerController_1.AdminServerController.postDeleteServer);
+exports.default = router;

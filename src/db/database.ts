@@ -101,24 +101,127 @@ export function initDatabase(): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS servers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT UNIQUE NOT NULL,
+      user_id INTEGER NOT NULL,
       name TEXT NOT NULL,
+      description TEXT DEFAULT '',
       game TEXT NOT NULL DEFAULT 'Minecraft',
-      status TEXT NOT NULL DEFAULT 'online',
-      ip_address TEXT NOT NULL,
-      port INTEGER NOT NULL,
+      version TEXT NOT NULL DEFAULT '1.20.4',
+      software TEXT NOT NULL DEFAULT 'Paper',
+      java_version TEXT NOT NULL DEFAULT '21',
+      ram_limit INTEGER NOT NULL DEFAULT 2048,
+      cpu_limit INTEGER NOT NULL DEFAULT 100,
+      disk_limit INTEGER NOT NULL DEFAULT 10,
+      directory TEXT NOT NULL,
+      jar_file TEXT NOT NULL DEFAULT 'server.jar',
+      port INTEGER NOT NULL UNIQUE,
+      startup_command TEXT NOT NULL DEFAULT 'java -Xms128M -Xmx{ram}M -jar {jar_file} --nogui',
+      auto_restart INTEGER NOT NULL DEFAULT 1,
+      status TEXT NOT NULL DEFAULT 'offline',
+      pid INTEGER DEFAULT NULL,
       players_online INTEGER DEFAULT 0,
       max_players INTEGER DEFAULT 20,
       cpu_usage REAL DEFAULT 0,
       memory_usage INTEGER DEFAULT 0,
-      max_memory INTEGER DEFAULT 4096,
       disk_usage REAL DEFAULT 0,
-      max_disk INTEGER DEFAULT 50,
-      user_id INTEGER NOT NULL,
+      suspended INTEGER NOT NULL DEFAULT 0,
+      last_started DATETIME DEFAULT NULL,
+      last_stopped DATETIME DEFAULT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE INDEX IF NOT EXISTS idx_servers_uuid ON servers(uuid);
     CREATE INDEX IF NOT EXISTS idx_servers_user_id ON servers(user_id);
+    CREATE INDEX IF NOT EXISTS idx_servers_status ON servers(status);
+  `);
+
+  // Auto-migration for servers table columns if missing
+  try {
+    const serverColumns = db.pragma('table_info(servers)') as { name: string }[];
+    const colNames = serverColumns.map(c => c.name);
+    if (!colNames.includes('uuid')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN uuid TEXT DEFAULT NULL`);
+    }
+    if (!colNames.includes('version')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN version TEXT NOT NULL DEFAULT '1.20.4'`);
+    }
+    if (!colNames.includes('software')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN software TEXT NOT NULL DEFAULT 'Paper'`);
+    }
+    if (!colNames.includes('java_version')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN java_version TEXT NOT NULL DEFAULT '21'`);
+    }
+    if (!colNames.includes('ram_limit')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN ram_limit INTEGER NOT NULL DEFAULT 2048`);
+    }
+    if (!colNames.includes('disk_limit')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN disk_limit INTEGER NOT NULL DEFAULT 10`);
+    }
+    if (!colNames.includes('directory')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN directory TEXT DEFAULT ''`);
+    }
+    if (!colNames.includes('jar_file')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN jar_file TEXT NOT NULL DEFAULT 'server.jar'`);
+    }
+    if (!colNames.includes('startup_command')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN startup_command TEXT NOT NULL DEFAULT 'java -Xms128M -Xmx{ram}M -jar {jar_file} --nogui'`);
+    }
+    if (!colNames.includes('auto_restart')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN auto_restart INTEGER NOT NULL DEFAULT 1`);
+    }
+    if (!colNames.includes('pid')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN pid INTEGER DEFAULT NULL`);
+    }
+    if (!colNames.includes('suspended')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0`);
+    }
+    if (!colNames.includes('last_started')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN last_started DATETIME DEFAULT NULL`);
+    }
+    if (!colNames.includes('last_stopped')) {
+      db.exec(`ALTER TABLE servers ADD COLUMN last_stopped DATETIME DEFAULT NULL`);
+    }
+  } catch (e) {
+    console.error('Migration warning (servers table):', e);
+  }
+
+  // Server Logs Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS server_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      message TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_server_logs_server_id ON server_logs(server_id DESC);
+  `);
+
+  // Server Events Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS server_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      event TEXT NOT NULL,
+      details TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_server_events_server_id ON server_events(server_id DESC);
+  `);
+
+  // Server Permissions Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS server_permissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      permission TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   // Activity Logs Table

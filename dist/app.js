@@ -18,6 +18,7 @@ const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const dashboardRoutes_1 = __importDefault(require("./routes/dashboardRoutes"));
 const profileRoutes_1 = __importDefault(require("./routes/profileRoutes"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
+const serverDashboardRoutes_1 = __importDefault(require("./routes/serverDashboardRoutes"));
 const app = (0, express_1.default)();
 // Trust Proxy for Cloudflare Tunnel & Reverse Proxies
 app.set('trust proxy', 1);
@@ -67,6 +68,7 @@ app.use('/', landingRoutes_1.default);
 app.use('/', authRoutes_1.default);
 app.use('/dashboard', dashboardRoutes_1.default);
 app.use('/dashboard/profile', profileRoutes_1.default);
+app.use('/dashboard/server', serverDashboardRoutes_1.default);
 app.use('/admin', adminRoutes_1.default);
 // 404 Handler
 app.use((req, res) => {

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { UserModel } from '../models/userModel';
 import { ServerModel } from '../models/serverModel';
 import { ActivityModel } from '../models/activityModel';
-import { SettingModel } from '../models/settingModel';
+import { ProcessManager } from '../services/processManager';
 
 export class DashboardController {
   static getDashboard(req: Request, res: Response): void {
@@ -14,8 +14,6 @@ export class DashboardController {
       return res.redirect('/login');
     }
 
-
-
     const servers = ServerModel.findByUserId(userId);
     const activityLogs = ActivityModel.getRecentByUserId(userId, 6);
 
@@ -24,7 +22,7 @@ export class DashboardController {
     const onlineServers = servers.filter(s => s.status === 'online').length;
     const totalPlayers = servers.reduce((acc, s) => acc + s.players_online, 0);
     const totalMemoryUsed = servers.reduce((acc, s) => acc + (s.status === 'online' ? s.memory_usage : 0), 0);
-    const totalMemoryAllocated = servers.reduce((acc, s) => acc + s.max_memory, 0);
+    const totalMemoryAllocated = servers.reduce((acc, s) => acc + s.ram_limit, 0);
     const avgCpu = servers.length > 0 
       ? Math.round(servers.reduce((acc, s) => acc + (s.status === 'online' ? s.cpu_usage : 0), 0) / servers.length) 
       : 0;
@@ -50,36 +48,38 @@ export class DashboardController {
     const serverId = parseInt(String(req.params.id), 10);
     const action = String(req.body.action || ''); // 'start', 'stop', 'restart'
 
-    const server = ServerModel.findById(serverId, userId);
-    if (!server) {
+    const server = ServerModel.findById(serverId);
+    if (!server || (server.user_id !== userId && req.session.role !== 'admin' && req.session.role !== 'superadmin')) {
       res.status(404).json({ success: false, message: 'Server not found' });
       return;
     }
 
-    let targetStatus: 'online' | 'starting' | 'stopping' | 'offline' = 'online';
+    const processMgr = ProcessManager.getInstance();
+    let success = false;
     let logMsg = '';
 
     if (action === 'start') {
-      targetStatus = 'online';
+      success = processMgr.startServer(server);
       logMsg = `Started server "${server.name}"`;
     } else if (action === 'stop') {
-      targetStatus = 'offline';
+      success = processMgr.stopServer(server);
       logMsg = `Stopped server "${server.name}"`;
     } else if (action === 'restart') {
-      targetStatus = 'online';
+      success = processMgr.restartServer(server);
       logMsg = `Restarted server "${server.name}"`;
     } else {
       res.status(400).json({ success: false, message: 'Invalid action' });
       return;
     }
 
-    ServerModel.updateStatus(serverId, userId, targetStatus);
-    ActivityModel.log(userId, req.session.username!, action.toUpperCase(), logMsg);
+    if (success) {
+      ActivityModel.log(userId, req.session.username!, action.toUpperCase(), logMsg, req.ip || '127.0.0.1');
+    }
 
-    const updatedServer = ServerModel.findById(serverId, userId);
+    const updatedServer = ServerModel.findById(serverId);
 
     res.json({
-      success: true,
+      success,
       message: logMsg,
       server: updatedServer
     });

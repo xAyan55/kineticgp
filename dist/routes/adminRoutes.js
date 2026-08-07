@@ -8,6 +8,7 @@ const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const adminMiddleware_1 = require("../middleware/adminMiddleware");
 const adminController_1 = require("../controllers/adminController");
+const adminServerRoutes_1 = __importDefault(require("./adminServerRoutes"));
 const storage = multer_1.default.diskStorage({
     destination: (_req, _file, cb) => {
         cb(null, path_1.default.join(process.cwd(), 'public', 'images'));
@@ -24,6 +25,8 @@ const router = (0, express_1.Router)();
 router.use(adminMiddleware_1.requireAdmin);
 // Overview
 router.get('/', adminController_1.AdminController.getOverview);
+// Servers Management
+router.use('/servers', adminServerRoutes_1.default);
 // Nodes Management
 router.get('/nodes', adminController_1.AdminController.getNodes);
 // User Management
