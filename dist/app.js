@@ -12,10 +12,12 @@ const path_1 = __importDefault(require("path"));
 const config_1 = require("./config");
 const database_1 = require("./db/database");
 const csrfMiddleware_1 = require("./middleware/csrfMiddleware");
+const userModel_1 = require("./models/userModel");
 const landingRoutes_1 = __importDefault(require("./routes/landingRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const dashboardRoutes_1 = __importDefault(require("./routes/dashboardRoutes"));
 const profileRoutes_1 = __importDefault(require("./routes/profileRoutes"));
+const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
 const app = (0, express_1.default)();
 // Trust Proxy for Cloudflare Tunnel & Reverse Proxies
 app.set('trust proxy', 1);
@@ -50,11 +52,13 @@ app.use((0, express_session_1.default)({
 // CSRF & View Globals Middleware
 app.use(csrfMiddleware_1.csrfProtection);
 app.use((req, res, next) => {
-    res.locals.currentUser = req.session?.userId ? {
-        id: req.session.userId,
-        username: req.session.username,
-        avatar: req.session.avatar
-    } : null;
+    if (req.session?.userId) {
+        const user = userModel_1.UserModel.findById(req.session.userId);
+        res.locals.currentUser = user;
+    }
+    else {
+        res.locals.currentUser = null;
+    }
     res.locals.path = req.path;
     next();
 });
@@ -63,6 +67,7 @@ app.use('/', landingRoutes_1.default);
 app.use('/', authRoutes_1.default);
 app.use('/dashboard', dashboardRoutes_1.default);
 app.use('/dashboard/profile', profileRoutes_1.default);
+app.use('/admin', adminRoutes_1.default);
 // 404 Handler
 app.use((req, res) => {
     res.status(404).render('landing', {

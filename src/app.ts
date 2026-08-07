@@ -7,11 +7,13 @@ import path from 'path';
 import { CONFIG } from './config';
 import { initDatabase } from './db/database';
 import { csrfProtection } from './middleware/csrfMiddleware';
+import { UserModel } from './models/userModel';
 
 import landingRoutes from './routes/landingRoutes';
 import authRoutes from './routes/authRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import profileRoutes from './routes/profileRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 
@@ -54,11 +56,12 @@ app.use(session({
 // CSRF & View Globals Middleware
 app.use(csrfProtection);
 app.use((req: Request, res: Response, next: NextFunction) => {
-  res.locals.currentUser = req.session?.userId ? {
-    id: req.session.userId,
-    username: req.session.username,
-    avatar: req.session.avatar
-  } : null;
+  if (req.session?.userId) {
+    const user = UserModel.findById(req.session.userId);
+    res.locals.currentUser = user;
+  } else {
+    res.locals.currentUser = null;
+  }
   res.locals.path = req.path;
   next();
 });
@@ -68,6 +71,7 @@ app.use('/', landingRoutes);
 app.use('/', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/dashboard/profile', profileRoutes);
+app.use('/admin', adminRoutes);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {

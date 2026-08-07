@@ -1,0 +1,272 @@
+<%- include('../layouts/header', { title: 'Plan Management' }) %>
+
+<div class="min-h-screen bg-[#101213] flex flex-col lg:flex-row">
+  <%- include('../components/sidebar') %>
+
+  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+    <!-- Top Bar / Breadcrumb Navigation -->
+    <header class="h-16 px-6 lg:px-10 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-sm text-neutral-400">
+        <span class="text-white font-medium">Administration</span>
+        <span>/</span>
+        <span class="text-[#1873d3] font-medium">Plans</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="openModal('createPlanModal')" class="btn-primary text-xs flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Create Plan
+        </button>
+      </div>
+    </header>
+
+    <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-8 flex-1">
+      <!-- ALERT MESSAGES -->
+      <% if (typeof msg !== 'undefined' && msg) { %>
+        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center justify-between">
+          <span>Action completed successfully!</span>
+          <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white">&times;</button>
+        </div>
+      <% } %>
+
+      <!-- HEADER TITLE -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Hosting Plans</h1>
+          <p class="text-neutral-400 text-sm mt-1">Configure node memory, CPU, storage quotas, and server limits for user tiers.</p>
+        </div>
+      </div>
+
+      <!-- PLANS GRID -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% plans.forEach(function(plan) { %>
+          <div class="kgp-card p-6 flex flex-col justify-between space-y-6 relative border-white/5">
+            <div class="space-y-4">
+              <!-- Plan Header -->
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-xl font-extrabold text-white"><%= plan.name %></h3>
+                  <p class="text-xs text-neutral-400 mt-1"><%= plan.description || 'No description provided.' %></p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <%= plan.is_enabled === 1 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400 border border-neutral-700' %>">
+                  <%= plan.is_enabled === 1 ? 'ENABLED' : 'DISABLED' %>
+                </span>
+              </div>
+
+              <!-- Price Tag -->
+              <div class="p-4 rounded-xl bg-[#101213] border border-white/5 flex items-baseline justify-between">
+                <span class="text-xs text-neutral-400 uppercase font-semibold">Tier Pricing</span>
+                <span class="text-2xl font-extrabold text-white">$<%= plan.price.toFixed(2) %> <span class="text-xs text-neutral-500 font-normal">/ mo</span></span>
+              </div>
+
+              <!-- Specs Checklist -->
+              <div class="space-y-2 text-xs divide-y divide-white/5">
+                <div class="pt-2 flex justify-between text-neutral-400">
+                  <span>RAM Memory Limit:</span>
+                  <span class="font-bold text-white font-mono"><%= (plan.memory_limit / 1024).toFixed(1) %> GB</span>
+                </div>
+                <div class="pt-2 flex justify-between text-neutral-400">
+                  <span>CPU Processing Limit:</span>
+                  <span class="font-bold text-white font-mono"><%= plan.cpu_limit %>%</span>
+                </div>
+                <div class="pt-2 flex justify-between text-neutral-400">
+                  <span>Disk Storage Quota:</span>
+                  <span class="font-bold text-white font-mono"><%= plan.disk_limit %> GB</span>
+                </div>
+                <div class="pt-2 flex justify-between text-neutral-400">
+                  <span>Max Server Instances:</span>
+                  <span class="font-bold text-white font-mono"><%= plan.max_servers %></span>
+                </div>
+                <div class="pt-2 flex justify-between text-neutral-400">
+                  <span>Max Automatic Backups:</span>
+                  <span class="font-bold text-white font-mono"><%= plan.max_backups %></span>
+                </div>
+                <div class="pt-2 flex justify-between text-neutral-400">
+                  <span>Max Databases / Allocations:</span>
+                  <span class="font-bold text-white font-mono"><%= plan.max_databases %> DB / <%= plan.max_allocations %> Ports</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-4 border-t border-white/5 flex items-center gap-2">
+              <button onclick='openEditPlanModal(<%- JSON.stringify(plan) %>)' title="Edit Plan" class="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold transition">
+                Edit
+              </button>
+              
+              <form method="POST" action="/admin/plans/<%= plan.id %>/duplicate" class="inline">
+                <input type="hidden" name="_csrf" value="<%= _csrf %>">
+                <button type="submit" title="Duplicate Plan" class="py-2 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-xs font-semibold transition">
+                  Copy
+                </button>
+              </form>
+
+              <form method="POST" action="/admin/plans/<%= plan.id %>/toggle" class="inline">
+                <input type="hidden" name="_csrf" value="<%= _csrf %>">
+                <button type="submit" title="Toggle Status" class="py-2 px-3 rounded-xl <%= plan.is_enabled === 1 ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' %> text-xs font-semibold transition">
+                  <%= plan.is_enabled === 1 ? 'Disable' : 'Enable' %>
+                </button>
+              </form>
+
+              <form method="POST" action="/admin/plans/<%= plan.id %>/delete" onsubmit="return confirm('Delete this plan?')" class="inline">
+                <input type="hidden" name="_csrf" value="<%= _csrf %>">
+                <button type="submit" title="Delete Plan" class="py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold transition">
+                  &times;
+                </button>
+              </form>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CREATE PLAN MODAL -->
+<div id="createPlanModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-lg w-full p-6 space-y-6 relative border-white/10 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-white">Create Hosting Plan</h3>
+      <button onclick="closeModal('createPlanModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <form method="POST" action="/admin/plans/create" class="space-y-4 text-xs">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <div>
+        <label class="block font-semibold text-neutral-400 mb-1">Plan Name</label>
+        <input type="text" name="name" required placeholder="e.g. Pro SMP Cluster" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div>
+        <label class="block font-semibold text-neutral-400 mb-1">Description</label>
+        <textarea name="description" rows="2" placeholder="Plan highlights..." class="w-full px-3.5 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Memory Limit (MB)</label>
+          <input type="number" name="memory_limit" value="4096" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">CPU Limit (%)</label>
+          <input type="number" name="cpu_limit" value="150" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Disk Storage (GB)</label>
+          <input type="number" name="disk_limit" value="25" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Monthly Price ($)</label>
+          <input type="number" step="0.01" name="price" value="4.99" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Max Servers</label>
+          <input type="number" name="max_servers" value="2" required class="w-full px-3 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Max Backups</label>
+          <input type="number" name="max_backups" value="5" required class="w-full px-3 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Max Databases</label>
+          <input type="number" name="max_databases" value="2" required class="w-full px-3 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+      </div>
+
+      <div class="pt-4 flex justify-end gap-3 border-t border-white/5">
+        <button type="button" onclick="closeModal('createPlanModal')" class="btn-secondary text-xs">Cancel</button>
+        <button type="submit" class="btn-primary text-xs">Create Plan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT PLAN MODAL -->
+<div id="editPlanModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-lg w-full p-6 space-y-6 relative border-white/10 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-white">Edit Hosting Plan</h3>
+      <button onclick="closeModal('editPlanModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <form id="editPlanForm" method="POST" action="" class="space-y-4 text-xs">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <div>
+        <label class="block font-semibold text-neutral-400 mb-1">Plan Name</label>
+        <input type="text" id="editPlanName" name="name" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div>
+        <label class="block font-semibold text-neutral-400 mb-1">Description</label>
+        <textarea id="editPlanDesc" name="description" rows="2" class="w-full px-3.5 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Memory Limit (MB)</label>
+          <input type="number" id="editPlanMemory" name="memory_limit" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">CPU Limit (%)</label>
+          <input type="number" id="editPlanCpu" name="cpu_limit" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Disk Storage (GB)</label>
+          <input type="number" id="editPlanDisk" name="disk_limit" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Monthly Price ($)</label>
+          <input type="number" step="0.01" id="editPlanPrice" name="price" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Max Servers</label>
+          <input type="number" id="editPlanServers" name="max_servers" required class="w-full px-3 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Max Backups</label>
+          <input type="number" id="editPlanBackups" name="max_backups" required class="w-full px-3 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+        <div>
+          <label class="block font-semibold text-neutral-400 mb-1">Max Databases</label>
+          <input type="number" id="editPlanDatabases" name="max_databases" required class="w-full px-3 py-2 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        </div>
+      </div>
+
+      <div class="pt-4 flex justify-end gap-3 border-t border-white/5">
+        <button type="button" onclick="closeModal('editPlanModal')" class="btn-secondary text-xs">Cancel</button>
+        <button type="submit" class="btn-primary text-xs">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+  function openEditPlanModal(plan) {
+    document.getElementById('editPlanForm').action = '/admin/plans/' + plan.id + '/edit';
+    document.getElementById('editPlanName').value = plan.name;
+    document.getElementById('editPlanDesc').value = plan.description || '';
+    document.getElementById('editPlanMemory').value = plan.memory_limit;
+    document.getElementById('editPlanCpu').value = plan.cpu_limit;
+    document.getElementById('editPlanDisk').value = plan.disk_limit;
+    document.getElementById('editPlanPrice').value = plan.price;
+    document.getElementById('editPlanServers').value = plan.max_servers;
+    document.getElementById('editPlanBackups').value = plan.max_backups;
+    document.getElementById('editPlanDatabases').value = plan.max_databases;
+    openModal('editPlanModal');
+  }
+</script>
+
+<%- include('../layouts/footer', { script: null }) %>

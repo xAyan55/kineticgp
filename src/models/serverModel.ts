@@ -2,14 +2,38 @@ import { db } from '../db/database';
 import { Server } from '../types';
 
 export class ServerModel {
+  static countAll(): number {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM servers');
+    return (stmt.get() as { count: number }).count;
+  }
+
+  static countOnline(): number {
+    const stmt = db.prepare("SELECT COUNT(*) as count FROM servers WHERE status = 'online'");
+    return (stmt.get() as { count: number }).count;
+  }
+
+  static countOffline(): number {
+    const stmt = db.prepare("SELECT COUNT(*) as count FROM servers WHERE status = 'offline'");
+    return (stmt.get() as { count: number }).count;
+  }
+
+  static findAll(): Server[] {
+    const stmt = db.prepare('SELECT * FROM servers ORDER BY id DESC');
+    return stmt.all() as Server[];
+  }
+
   static findByUserId(userId: number): Server[] {
     const stmt = db.prepare('SELECT * FROM servers WHERE user_id = ? ORDER BY id ASC');
     return stmt.all(userId) as Server[];
   }
 
-  static findById(id: number, userId: number): Server | null {
-    const stmt = db.prepare('SELECT * FROM servers WHERE id = ? AND user_id = ?');
-    return (stmt.get(id, userId) as Server) || null;
+  static findById(id: number, userId?: number): Server | null {
+    if (userId !== undefined) {
+      const stmt = db.prepare('SELECT * FROM servers WHERE id = ? AND user_id = ?');
+      return (stmt.get(id, userId) as Server) || null;
+    }
+    const stmt = db.prepare('SELECT * FROM servers WHERE id = ?');
+    return (stmt.get(id) as Server) || null;
   }
 
   static updateStatus(id: number, userId: number, status: 'online' | 'starting' | 'stopping' | 'offline'): boolean {

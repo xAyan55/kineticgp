@@ -31,14 +31,20 @@ class AuthController {
         if (!user) {
             return res.redirect('/login?err=invalid_credentials');
         }
+        if (user.status === 'suspended') {
+            return res.redirect('/login?err=account_suspended');
+        }
         const isValid = bcryptjs_1.default.compareSync(password, user.password_hash);
         if (!isValid) {
             return res.redirect('/login?err=invalid_credentials');
         }
+        // Update last login
+        userModel_1.UserModel.updateLastLogin(user.id);
         // Set session
         req.session.userId = user.id;
         req.session.username = user.username;
         req.session.avatar = user.avatar;
+        req.session.role = user.role;
         if (remember === 'on') {
             req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
         }
@@ -86,11 +92,14 @@ class AuthController {
             password_hash,
             avatar: randomAvatar
         });
-        activityModel_1.ActivityModel.log(newUser.id, newUser.username, 'ACCOUNT_CREATED', `New account created with username: ${cleanUsername}`);
+        // Update last login
+        userModel_1.UserModel.updateLastLogin(newUser.id);
+        activityModel_1.ActivityModel.log(newUser.id, newUser.username, 'ACCOUNT_CREATED', `New account created as ${newUser.role}: ${cleanUsername}`);
         // Auto login after registration
         req.session.userId = newUser.id;
         req.session.username = newUser.username;
         req.session.avatar = newUser.avatar;
+        req.session.role = newUser.role;
         res.redirect('/dashboard');
     }
     static logout(req, res) {

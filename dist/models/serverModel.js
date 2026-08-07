@@ -3,13 +3,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServerModel = void 0;
 const database_1 = require("../db/database");
 class ServerModel {
+    static countAll() {
+        const stmt = database_1.db.prepare('SELECT COUNT(*) as count FROM servers');
+        return stmt.get().count;
+    }
+    static countOnline() {
+        const stmt = database_1.db.prepare("SELECT COUNT(*) as count FROM servers WHERE status = 'online'");
+        return stmt.get().count;
+    }
+    static countOffline() {
+        const stmt = database_1.db.prepare("SELECT COUNT(*) as count FROM servers WHERE status = 'offline'");
+        return stmt.get().count;
+    }
+    static findAll() {
+        const stmt = database_1.db.prepare('SELECT * FROM servers ORDER BY id DESC');
+        return stmt.all();
+    }
     static findByUserId(userId) {
         const stmt = database_1.db.prepare('SELECT * FROM servers WHERE user_id = ? ORDER BY id ASC');
         return stmt.all(userId);
     }
     static findById(id, userId) {
-        const stmt = database_1.db.prepare('SELECT * FROM servers WHERE id = ? AND user_id = ?');
-        return stmt.get(id, userId) || null;
+        if (userId !== undefined) {
+            const stmt = database_1.db.prepare('SELECT * FROM servers WHERE id = ? AND user_id = ?');
+            return stmt.get(id, userId) || null;
+        }
+        const stmt = database_1.db.prepare('SELECT * FROM servers WHERE id = ?');
+        return stmt.get(id) || null;
     }
     static updateStatus(id, userId, status) {
         let cpu = 0;

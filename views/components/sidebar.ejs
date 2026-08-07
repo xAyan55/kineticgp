@@ -7,21 +7,65 @@
   </div>
 
   <!-- Navigation Items -->
-  <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-    <a href="/dashboard" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/dashboard' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-      Dashboard
-    </a>
+  <nav class="flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+    <!-- User Navigation -->
+    <div class="space-y-1.5">
+      <div class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">User Area</div>
+      <a href="/dashboard" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/dashboard' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </a>
 
-    <a href="/dashboard/profile" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/dashboard/profile' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-      Profile Settings
-    </a>
+      <a href="/dashboard/profile" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/dashboard/profile' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        Profile Settings
+      </a>
 
-    <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-all duration-150">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-      Landing Page
-    </a>
+      <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-all duration-150">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Landing Page
+      </a>
+    </div>
+
+    <!-- Admin Section (Only for Admin & Super Admin) -->
+    <% if (user && (user.role === 'admin' || user.role === 'superadmin')) { %>
+      <div class="space-y-1.5 pt-4 border-t border-white/5">
+        <div class="px-3 text-[10px] font-bold text-[#1873d3] uppercase tracking-wider flex items-center justify-between">
+          <span>Administration</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-[#1873d3] animate-pulse"></span>
+        </div>
+
+        <a href="/admin" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/admin' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Overview
+        </a>
+
+        <a href="/admin/nodes" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/admin/nodes' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+          Nodes
+        </a>
+
+        <a href="/admin/users" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/admin/users' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Users
+        </a>
+
+        <a href="/admin/plans" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/admin/plans' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Plans
+        </a>
+
+        <a href="/admin/settings" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/admin/settings' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Settings
+        </a>
+
+        <a href="/admin/logs" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 <%= path === '/admin/logs' ? 'bg-[#1873d3] text-white shadow-soft-md' : 'text-neutral-400 hover:text-white hover:bg-white/5' %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Audit Logs
+        </a>
+      </div>
+    <% } %>
   </nav>
 
   <!-- User Card Footer -->
@@ -31,7 +75,9 @@
         <img src="<%= user.avatar %>" alt="User avatar" class="w-8 h-8 rounded-full border border-[#1873d3]/40 object-cover flex-shrink-0">
         <div class="truncate">
           <p class="text-xs font-semibold text-white truncate"><%= user.username %></p>
-          <span class="text-[10px] text-emerald-400 font-medium">Administrator</span>
+          <span class="text-[10px] <%= user.role === 'superadmin' ? 'text-purple-400' : user.role === 'admin' ? 'text-[#1873d3]' : 'text-neutral-400' %> font-semibold capitalize">
+            <%= user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Administrator' : 'User' %>
+          </span>
         </div>
       </div>
       <a href="/logout" title="Sign Out" class="text-neutral-400 hover:text-red-400 transition-colors p-1">
@@ -48,23 +94,28 @@
     <span class="text-base font-bold text-white tracking-tight">Kinetic<span class="text-[#1873d3]">GP</span></span>
   </a>
   <div class="flex items-center gap-3">
+    <% if (user && (user.role === 'admin' || user.role === 'superadmin')) { %>
+      <a href="/admin" class="text-xs px-2.5 py-1 rounded-full bg-[#1873d3]/10 text-[#1873d3] font-semibold border border-[#1873d3]/30">Admin</a>
+    <% } %>
     <img src="<%= user.avatar %>" alt="User avatar" class="w-7 h-7 rounded-full border border-[#1873d3]/40 object-cover">
     <a href="/logout" class="text-xs text-neutral-400 hover:text-red-400">Exit</a>
   </div>
 </div>
 
 <!-- Mobile Bottom Navigation Rail -->
-<div class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#101213]/95 backdrop-blur-xl border-t border-white/5 z-30 px-6 flex items-center justify-around">
+<div class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#101213]/95 backdrop-blur-xl border-t border-white/5 z-30 px-4 flex items-center justify-around">
   <a href="/dashboard" class="flex flex-col items-center gap-1 text-xs font-medium <%= path === '/dashboard' ? 'text-[#1873d3]' : 'text-neutral-400' %>">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
     Dashboard
   </a>
+  <% if (user && (user.role === 'admin' || user.role === 'superadmin')) { %>
+    <a href="/admin" class="flex flex-col items-center gap-1 text-xs font-medium <%= path.startsWith('/admin') ? 'text-[#1873d3]' : 'text-neutral-400' %>">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Admin
+    </a>
+  <% } %>
   <a href="/dashboard/profile" class="flex flex-col items-center gap-1 text-xs font-medium <%= path === '/dashboard/profile' ? 'text-[#1873d3]' : 'text-neutral-400' %>">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
     Profile
-  </a>
-  <a href="/" class="flex flex-col items-center gap-1 text-xs font-medium text-neutral-400">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-    Home
   </a>
 </div>

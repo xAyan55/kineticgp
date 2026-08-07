@@ -1,0 +1,350 @@
+<%- include('../layouts/header', { title: 'User Management' }) %>
+
+<div class="min-h-screen bg-[#101213] flex flex-col lg:flex-row">
+  <%- include('../components/sidebar') %>
+
+  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+    <!-- Top Bar / Breadcrumb Navigation -->
+    <header class="h-16 px-6 lg:px-10 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-sm text-neutral-400">
+        <span class="text-white font-medium">Administration</span>
+        <span>/</span>
+        <span class="text-[#1873d3] font-medium">Users</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="openModal('createUserModal')" class="btn-primary text-xs flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Create User
+        </button>
+      </div>
+    </header>
+
+    <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-8 flex-1">
+      <!-- ALERT MESSAGES -->
+      <% if (typeof msg !== 'undefined' && msg) { %>
+        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Action completed successfully!</span>
+          </div>
+          <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white">&times;</button>
+        </div>
+      <% } %>
+
+      <% if (typeof err !== 'undefined' && err) { %>
+        <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>
+              <% if (err === 'cannot_delete_self') { %> You cannot delete your own account. <% } %>
+              <% if (err === 'cannot_suspend_self') { %> You cannot suspend your own account. <% } %>
+              <% if (err === 'cannot_delete_last_superadmin') { %> Deletion prevented: Cannot delete the only Super Administrator. <% } %>
+              <% if (err === 'cannot_demote_last_superadmin') { %> Demotion prevented: Cannot demote the only Super Administrator. <% } %>
+              <% if (err === 'cannot_change_own_role') { %> You cannot change your own role. <% } %>
+              <% if (err === 'username_exists') { %> Username is already registered. <% } %>
+              <% if (err === 'email_exists') { %> Email address is already registered. <% } %>
+              <% if (err === 'missing_fields') { %> Please fill in all required fields. <% } %>
+            </span>
+          </div>
+          <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-white">&times;</button>
+        </div>
+      <% } %>
+
+      <!-- SEARCH & FILTERS TOOLBAR -->
+      <form method="GET" action="/admin/users" class="kgp-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="relative flex-1 w-full">
+          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" name="search" value="<%= search %>" placeholder="Search users by username or email..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <select name="role" onchange="this.form.submit()" class="px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-xs text-white focus:outline-none focus:border-[#1873d3]">
+            <option value="">All Roles</option>
+            <option value="superadmin" <%= roleFilter === 'superadmin' ? 'selected' : '' %>>Super Admin</option>
+            <option value="admin" <%= roleFilter === 'admin' ? 'selected' : '' %>>Administrator</option>
+            <option value="user" <%= roleFilter === 'user' ? 'selected' : '' %>>User</option>
+          </select>
+
+          <select name="status" onchange="this.form.submit()" class="px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-xs text-white focus:outline-none focus:border-[#1873d3]">
+            <option value="">All Statuses</option>
+            <option value="active" <%= statusFilter === 'active' ? 'selected' : '' %>>Active</option>
+            <option value="suspended" <%= statusFilter === 'suspended' ? 'selected' : '' %>>Suspended</option>
+          </select>
+
+          <button type="submit" class="btn-secondary text-xs px-4 py-2.5">Filter</button>
+        </div>
+      </form>
+
+      <!-- USERS TABLE -->
+      <div class="kgp-card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-neutral-300">
+            <thead class="bg-[#101213] border-b border-white/5 text-xs uppercase tracking-wider text-neutral-400 font-semibold">
+              <tr>
+                <th class="px-6 py-4">User</th>
+                <th class="px-6 py-4">Role</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4">Joined Date</th>
+                <th class="px-6 py-4">Last Login</th>
+                <th class="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <% if (users.length === 0) { %>
+                <tr>
+                  <td colspan="6" class="px-6 py-8 text-center text-neutral-500 text-sm">No users found matching your search.</td>
+                </tr>
+              <% } else { %>
+                <% users.forEach(function(u) { %>
+                  <tr class="hover:bg-white/[0.02] transition">
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-3">
+                        <img src="<%= u.avatar %>" alt="User avatar" class="w-9 h-9 rounded-xl border border-white/10 object-cover flex-shrink-0">
+                        <div>
+                          <p class="font-bold text-white leading-tight flex items-center gap-2">
+                            <%= u.username %>
+                            <% if (u.id === user.id) { %>
+                              <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#1873d3]/10 text-[#1873d3] border border-[#1873d3]/30 font-semibold">YOU</span>
+                            <% } %>
+                          </p>
+                          <p class="text-xs text-neutral-400 font-mono mt-0.5"><%= u.email %></p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider <%= u.role === 'superadmin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30' : u.role === 'admin' ? 'bg-[#1873d3]/10 text-[#1873d3] border border-[#1873d3]/30' : 'bg-neutral-800 text-neutral-400 border border-neutral-700' %>">
+                        <%= u.role === 'superadmin' ? 'Super Admin' : u.role === 'admin' ? 'Admin' : 'User' %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider <%= u.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30' %>">
+                        <%= u.status %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-xs font-mono text-neutral-400">
+                      <%= u.created_at %>
+                    </td>
+                    <td class="px-6 py-4 text-xs font-mono text-neutral-400">
+                      <%= u.last_login ? u.last_login : 'Never' %>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <!-- Edit Button -->
+                        <button onclick="openEditModal('<%= u.id %>', '<%= u.username %>', '<%= u.email %>')" title="Edit User" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 transition">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+
+                        <!-- Reset Password Button -->
+                        <button onclick="openResetPasswordModal('<%= u.id %>', '<%= u.username %>')" title="Reset Password" class="p-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                        </button>
+
+                        <!-- Role Modal Button (Super Admin Only) -->
+                        <% if (user.role === 'superadmin') { %>
+                          <button onclick="openRoleModal('<%= u.id %>', '<%= u.username %>', '<%= u.role %>')" title="Change Role" class="p-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                          </button>
+                        <% } %>
+
+                        <!-- Suspend Form -->
+                        <% if (u.id !== user.id) { %>
+                          <form method="POST" action="/admin/users/<%= u.id %>/suspend" class="inline">
+                            <input type="hidden" name="_csrf" value="<%= _csrf %>">
+                            <button type="submit" title="<%= u.status === 'active' ? 'Suspend User' : 'Unsuspend User' %>" class="p-2 rounded-lg <%= u.status === 'active' ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400' %> transition">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                            </button>
+                          </form>
+
+                          <!-- Delete Form -->
+                          <button onclick="openDeleteModal('<%= u.id %>', '<%= u.username %>')" title="Delete User" class="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                        <% } %>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PAGINATION -->
+        <% if (totalPages > 1) { %>
+          <div class="px-6 py-4 border-t border-white/5 flex items-center justify-between text-xs text-neutral-400 bg-[#101213]">
+            <span>Page <%= page %> of <%= totalPages %> (<%= totalCount %> total users)</span>
+            <div class="flex items-center gap-2">
+              <% if (page > 1) { %>
+                <a href="/admin/users?page=<%= page - 1 %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>" class="btn-secondary py-1.5 px-3">Previous</a>
+              <% } %>
+              <% if (page < totalPages) { %>
+                <a href="/admin/users?page=<%= page + 1 %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>" class="btn-secondary py-1.5 px-3">Next</a>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CREATE USER MODAL -->
+<div id="createUserModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-6 relative border-white/10">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-white">Create New User</h3>
+      <button onclick="closeModal('createUserModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <form method="POST" action="/admin/users/create" class="space-y-4">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Username</label>
+        <input type="text" name="username" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Email Address</label>
+        <input type="email" name="email" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Password</label>
+        <input type="password" name="password" required minlength="6" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Assigned Role</label>
+        <select name="role" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+          <option value="user">User</option>
+          <option value="admin">Administrator</option>
+          <% if (user.role === 'superadmin') { %>
+            <option value="superadmin">Super Administrator</option>
+          <% } %>
+        </select>
+      </div>
+      <div class="pt-4 flex justify-end gap-3 border-t border-white/5">
+        <button type="button" onclick="closeModal('createUserModal')" class="btn-secondary text-xs">Cancel</button>
+        <button type="submit" class="btn-primary text-xs">Create User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div id="editUserModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-6 relative border-white/10">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-white">Edit User</h3>
+      <button onclick="closeModal('editUserModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <form id="editUserForm" method="POST" action="" class="space-y-4">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Username</label>
+        <input type="text" id="editUsername" name="username" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Email Address</label>
+        <input type="email" id="editEmail" name="email" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div class="pt-4 flex justify-end gap-3 border-t border-white/5">
+        <button type="button" onclick="closeModal('editUserModal')" class="btn-secondary text-xs">Cancel</button>
+        <button type="submit" class="btn-primary text-xs">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div id="resetPasswordModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-6 relative border-white/10">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-white">Reset User Password</h3>
+      <button onclick="closeModal('resetPasswordModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <form id="resetPasswordForm" method="POST" action="" class="space-y-4">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <p class="text-xs text-neutral-400">Resetting password for user <span id="resetUsername" class="font-bold text-white"></span>.</p>
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">New Password</label>
+        <input type="password" name="new_password" required minlength="6" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+      </div>
+      <div class="pt-4 flex justify-end gap-3 border-t border-white/5">
+        <button type="button" onclick="closeModal('resetPasswordModal')" class="btn-secondary text-xs">Cancel</button>
+        <button type="submit" class="btn-primary text-xs">Reset Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ROLE MODAL -->
+<div id="roleModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-6 relative border-white/10">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-white">Change User Role</h3>
+      <button onclick="closeModal('roleModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <form id="roleForm" method="POST" action="" class="space-y-4">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <p class="text-xs text-neutral-400">Changing role for user <span id="roleUsername" class="font-bold text-white"></span>.</p>
+      <div>
+        <label class="block text-xs font-semibold text-neutral-400 mb-1">Select Role</label>
+        <select id="roleSelect" name="role" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+          <option value="user">User</option>
+          <option value="admin">Administrator</option>
+          <option value="superadmin">Super Administrator</option>
+        </select>
+      </div>
+      <div class="pt-4 flex justify-end gap-3 border-t border-white/5">
+        <button type="button" onclick="closeModal('roleModal')" class="btn-secondary text-xs">Cancel</button>
+        <button type="submit" class="btn-primary text-xs">Update Role</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div id="deleteModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-6 relative border-red-500/20">
+    <div class="flex items-center justify-between border-b border-white/5 pb-4">
+      <h3 class="text-lg font-bold text-red-400">Delete User Account</h3>
+      <button onclick="closeModal('deleteModal')" class="text-neutral-400 hover:text-white">&times;</button>
+    </div>
+    <p class="text-sm text-neutral-300">Are you sure you want to delete user <span id="deleteUsername" class="font-bold text-white"></span>? This action cannot be undone.</p>
+    <form id="deleteForm" method="POST" action="" class="flex justify-end gap-3">
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+      <button type="button" onclick="closeModal('deleteModal')" class="btn-secondary text-xs">Cancel</button>
+      <button type="submit" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-xs shadow-soft-md transition">Delete User</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+  function openEditModal(id, username, email) {
+    document.getElementById('editUserForm').action = '/admin/users/' + id + '/edit';
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editEmail').value = email;
+    openModal('editUserModal');
+  }
+  function openResetPasswordModal(id, username) {
+    document.getElementById('resetPasswordForm').action = '/admin/users/' + id + '/reset-password';
+    document.getElementById('resetUsername').innerText = username;
+    openModal('resetPasswordModal');
+  }
+  function openRoleModal(id, username, currentRole) {
+    document.getElementById('roleForm').action = '/admin/users/' + id + '/role';
+    document.getElementById('roleUsername').innerText = username;
+    document.getElementById('roleSelect').value = currentRole;
+    openModal('roleModal');
+  }
+  function openDeleteModal(id, username) {
+    document.getElementById('deleteForm').action = '/admin/users/' + id + '/delete';
+    document.getElementById('deleteUsername').innerText = username;
+    openModal('deleteModal');
+  }
+</script>
+
+<%- include('../layouts/footer', { script: null }) %>
