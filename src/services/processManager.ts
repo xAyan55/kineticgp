@@ -10,6 +10,10 @@ export class ProcessManager extends EventEmitter {
   private static instance: ProcessManager;
   private activeProcesses: Map<string, ChildProcess> = new Map();
   private consoleLogsBuffer: Map<string, string[]> = new Map();
+  private serverIdCache: Map<string, number> = new Map();
+
+  private logQueue: Array<{ serverId: number; message: string }> = [];
+  private logTimer: NodeJS.Timeout | null = null;
 
   private constructor() {
     super();
@@ -20,6 +24,51 @@ export class ProcessManager extends EventEmitter {
       ProcessManager.instance = new ProcessManager();
     }
     return ProcessManager.instance;
+  }
+
+  private getServerId(serverUuid: string): number | null {
+    if (this.serverIdCache.has(serverUuid)) {
+      return this.serverIdCache.get(serverUuid)!;
+    }
+    try {
+      const server = ServerModel.findByUuid(serverUuid);
+      if (server) {
+        this.serverIdCache.set(serverUuid, server.id);
+        return server.id;
+      }
+    } catch {}
+    return null;
+  }
+
+  private queueDbLog(serverId: number, message: string): void {
+    this.logQueue.push({ serverId, message });
+    if (!this.logTimer) {
+      this.logTimer = setTimeout(() => {
+        this.flushLogQueue();
+      }, 100);
+    }
+  }
+
+  private flushLogQueue(): void {
+    this.logTimer = null;
+    if (this.logQueue.length === 0) return;
+
+    const itemsToFlush = this.logQueue.splice(0, 100);
+    try {
+      const stmt = db.prepare('INSERT INTO server_logs (server_id, message) VALUES (?, ?)');
+      const insertBatch = db.transaction((logs: Array<{ serverId: number; message: string }>) => {
+        for (const item of logs) {
+          stmt.run(item.serverId, item.message);
+        }
+      });
+      insertBatch(itemsToFlush);
+    } catch (e) {
+      // Ignore background log write errors
+    }
+
+    if (this.logQueue.length > 0) {
+      this.logTimer = setTimeout(() => this.flushLogQueue(), 100);
+    }
   }
 
   // Append a console log line to buffer, DB, and emit live SSE event
@@ -38,14 +87,10 @@ export class ProcessManager extends EventEmitter {
       buffer.shift();
     }
 
-    // Persist to server_logs table in SQLite
-    try {
-      const server = ServerModel.findByUuid(serverUuid);
-      if (server) {
-        db.prepare('INSERT INTO server_logs (server_id, message) VALUES (?, ?)').run(server.id, cleanMsg);
-      }
-    } catch (e) {
-      // Ignore log write errors
+    // Queue DB log write asynchronously to avoid blocking the event loop
+    const serverId = this.getServerId(serverUuid);
+    if (serverId) {
+      this.queueDbLog(serverId, cleanMsg);
     }
 
     // Emit live SSE event for subscribers
@@ -58,9 +103,9 @@ export class ProcessManager extends EventEmitter {
     }
     // Fallback: read from database
     try {
-      const server = ServerModel.findByUuid(serverUuid);
-      if (server) {
-        const rows = db.prepare('SELECT message FROM server_logs WHERE server_id = ? ORDER BY id DESC LIMIT 200').all(server.id) as { message: string }[];
+      const serverId = this.getServerId(serverUuid);
+      if (serverId) {
+        const rows = db.prepare('SELECT message FROM server_logs WHERE server_id = ? ORDER BY id DESC LIMIT 200').all(serverId) as { message: string }[];
         const logs = rows.map(r => r.message).reverse();
         this.consoleLogsBuffer.set(serverUuid, logs);
         return logs;
@@ -91,11 +136,12 @@ export class ProcessManager extends EventEmitter {
 
     if (!fs.existsSync(jarPath)) {
       this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Jar file not found at ${jarPath}. Reinstall server jar.`);
+      ServerModel.updateRuntimeState(server.id, 'offline', null);
       return false;
     }
 
-    // Build startup arguments
-    const xmx = server.ram_limit || 2048;
+    // Build startup arguments with safety limits
+    const xmx = Math.min(server.ram_limit || 2048, 8192);
     const args = [
       `-Xms128M`,
       `-Xmx${xmx}M`,
@@ -109,66 +155,78 @@ export class ProcessManager extends EventEmitter {
     this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Directory: ${workingDir}`);
     this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Command: java ${args.join(' ')}`);
 
+    let child: ChildProcess;
     try {
-      const child = spawn('java', args, {
+      child = spawn('java', args, {
         cwd: workingDir,
         env: { ...process.env },
         stdio: ['pipe', 'pipe', 'pipe']
       });
-
-      // Attach error handler immediately to prevent uncaught ENOENT process crashes
-      child.on('error', (err: any) => {
-        this.activeProcesses.delete(server.uuid);
-        ServerModel.updateRuntimeState(server.id, 'offline', null);
-        this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
-
-        if (err.code === 'ENOENT') {
-          this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] ❌ Java runtime binary ("java") was not found on the host system.`);
-          this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Please install OpenJDK on your server host: "sudo apt update && sudo apt install -y default-jre"`);
-        } else {
-          this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process launch error: ${err.message}`);
-        }
-      });
-
-      if (!child.pid) {
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Failed to launch Java process.`);
-        return false;
-      }
-
-      this.activeProcesses.set(server.uuid, child);
-      ServerModel.updateRuntimeState(server.id, 'online', child.pid);
-
-      child.stdout?.on('data', (data) => {
-        const text = data.toString('utf-8');
-        const lines = text.split(/\r?\n/);
-        for (const line of lines) {
-          if (line.trim()) this.logOutput(server.uuid, line);
-        }
-      });
-
-      child.stderr?.on('data', (data) => {
-        const text = data.toString('utf-8');
-        const lines = text.split(/\r?\n/);
-        for (const line of lines) {
-          if (line.trim()) this.logOutput(server.uuid, `[WARN] ${line}`);
-        }
-      });
-
-      child.on('close', (code) => {
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process terminated with exit code: ${code}`);
-        this.activeProcesses.delete(server.uuid);
-        ServerModel.updateRuntimeState(server.id, 'offline', null);
-        this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
-      });
-
-      this.emit(`status:${server.uuid}`, { status: 'online', pid: child.pid });
-      return true;
-
     } catch (e: any) {
       this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Launch failed: ${e.message}`);
       ServerModel.updateRuntimeState(server.id, 'offline', null);
       return false;
     }
+
+    // Protect all child streams against unhandled error events
+    child.stdin?.on('error', (err: any) => {
+      console.warn(`[ProcessManager] stdin stream error (${server.uuid}):`, err.message);
+    });
+    child.stdout?.on('error', (err: any) => {
+      console.warn(`[ProcessManager] stdout stream error (${server.uuid}):`, err.message);
+    });
+    child.stderr?.on('error', (err: any) => {
+      console.warn(`[ProcessManager] stderr stream error (${server.uuid}):`, err.message);
+    });
+
+    // Attach process error handler
+    child.on('error', (err: any) => {
+      this.activeProcesses.delete(server.uuid);
+      ServerModel.updateRuntimeState(server.id, 'offline', null);
+      this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
+
+      if (err.code === 'ENOENT') {
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] ❌ Java runtime binary ("java") was not found on the host system.`);
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Please install OpenJDK on your server host: "sudo apt update && sudo apt install -y default-jre"`);
+      } else {
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process launch error: ${err.message}`);
+      }
+    });
+
+    if (!child.pid) {
+      this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Failed to obtain Java process PID.`);
+      ServerModel.updateRuntimeState(server.id, 'offline', null);
+      return false;
+    }
+
+    this.activeProcesses.set(server.uuid, child);
+    ServerModel.updateRuntimeState(server.id, 'online', child.pid);
+
+    child.stdout?.on('data', (data) => {
+      const text = data.toString('utf-8');
+      const lines = text.split(/\r?\n/);
+      for (const line of lines) {
+        if (line.trim()) this.logOutput(server.uuid, line);
+      }
+    });
+
+    child.stderr?.on('data', (data) => {
+      const text = data.toString('utf-8');
+      const lines = text.split(/\r?\n/);
+      for (const line of lines) {
+        if (line.trim()) this.logOutput(server.uuid, `[WARN] ${line}`);
+      }
+    });
+
+    child.on('close', (code) => {
+      this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process terminated with exit code: ${code}`);
+      this.activeProcesses.delete(server.uuid);
+      ServerModel.updateRuntimeState(server.id, 'offline', null);
+      this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
+    });
+
+    this.emit(`status:${server.uuid}`, { status: 'online', pid: child.pid });
+    return true;
   }
 
   public stopServer(server: Server): boolean {
@@ -262,7 +320,6 @@ export class ProcessManager extends EventEmitter {
       };
     }
 
-    // Accurate process metrics when process is online
     const proc = this.activeProcesses.get(server.uuid);
     const pid = proc?.pid;
 

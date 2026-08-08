@@ -34,18 +34,31 @@ const storage = multer_1.default.diskStorage({
 exports.fileUpload = (0, multer_1.default)({ storage });
 class ServerDashboardController {
     static authorizeServerAccess(req, res) {
+        const isJson = req.xhr || req.headers.accept?.includes('json') || req.headers['x-requested-with'] === 'XMLHttpRequest';
         if (!req.session || !req.session.userId) {
+            if (isJson) {
+                res.status(401).json({ success: false, error: 'UNAUTHENTICATED' });
+                return null;
+            }
             res.redirect('/login');
             return null;
         }
         const user = userModel_1.UserModel.findById(req.session.userId);
         if (!user || user.status === 'suspended') {
+            if (isJson) {
+                res.status(403).json({ success: false, error: 'ACCOUNT_SUSPENDED' });
+                return null;
+            }
             res.redirect('/login?err=account_suspended');
             return null;
         }
         const uuid = String(req.params.uuid);
         const server = serverModel_1.ServerModel.findByUuid(uuid);
         if (!server) {
+            if (isJson) {
+                res.status(404).json({ success: false, error: 'SERVER_NOT_FOUND' });
+                return null;
+            }
             res.status(404).render('landing', {
                 title: 'Server Not Found',
                 siteTitle: 'KineticGP Panel',
@@ -56,6 +69,10 @@ class ServerDashboardController {
         }
         // Access check: Only owner or admin/superadmin can access
         if (server.user_id !== user.id && user.role !== 'admin' && user.role !== 'superadmin') {
+            if (isJson) {
+                res.status(403).json({ success: false, error: 'FORBIDDEN' });
+                return null;
+            }
             res.status(403).render('errors/403', {
                 title: '403 Forbidden — Server Access Denied',
                 user
@@ -132,12 +149,18 @@ class ServerDashboardController {
         let success = false;
         let logMsg = '';
         if (action === 'start') {
-            success = processMgr.startServer(server);
-            logMsg = `Started server "${server.name}"`;
+            if (processMgr.isProcessRunning(server.uuid)) {
+                logMsg = 'Server is already running.';
+                success = false;
+            }
+            else {
+                success = processMgr.startServer(server);
+                logMsg = success ? `Started server "${server.name}"` : `Failed to start server "${server.name}"`;
+            }
         }
         else if (action === 'stop') {
             success = processMgr.stopServer(server);
-            logMsg = `Stopped server "${server.name}"`;
+            logMsg = success ? `Stopped server "${server.name}"` : `Server is not running.`;
         }
         else if (action === 'restart') {
             success = processMgr.restartServer(server);
@@ -150,8 +173,18 @@ class ServerDashboardController {
         if (success) {
             activityModel_1.ActivityModel.log(user.id, user.username, `SERVER_${action.toUpperCase()}`, logMsg, req.ip || '127.0.0.1');
         }
-        if (req.xhr || req.headers.accept?.includes('json')) {
-            res.json({ success, message: logMsg });
+        // Persist session before responding
+        if (req.session) {
+            req.session.save(() => { });
+        }
+        const isJson = req.xhr || req.headers.accept?.includes('json') || req.headers['x-requested-with'] === 'XMLHttpRequest';
+        if (isJson) {
+            const updatedServer = serverModel_1.ServerModel.findById(server.id) || server;
+            res.json({
+                success,
+                message: logMsg,
+                status: updatedServer.status
+            });
             return;
         }
         res.redirect(`/dashboard/server/${server.uuid}/console`);
