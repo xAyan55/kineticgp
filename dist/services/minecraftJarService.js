@@ -167,25 +167,28 @@ class MinecraftJarService extends events_1.EventEmitter {
         catch {
             // fallback
         }
-        // 4. Mojang Official Vanilla Manifest Fallback
-        const mojangUri = 'https://launchermeta.mojang.com/mc/game/version_manifest.json';
-        if (logger)
-            logger(`[HTTP] GET ${mojangUri}`);
-        try {
-            const manifest = await this.fetchJson(mojangUri);
-            const verObj = manifest.versions.find(v => v.id === version);
-            if (verObj) {
-                const verDetails = await this.fetchJson(verObj.url);
-                if (verDetails?.downloads?.server?.url) {
-                    return verDetails.downloads.server.url;
+        // 4. Mojang Official Vanilla Manifest (ONLY when vanilla was requested)
+        if (softLower.includes('vanilla')) {
+            const mojangUri = 'https://launchermeta.mojang.com/mc/game/version_manifest.json';
+            if (logger)
+                logger(`[HTTP] GET ${mojangUri}`);
+            try {
+                const manifest = await this.fetchJson(mojangUri);
+                const verObj = manifest.versions.find(v => v.id === version);
+                if (verObj) {
+                    const verDetails = await this.fetchJson(verObj.url);
+                    if (verDetails?.downloads?.server?.url) {
+                        return verDetails.downloads.server.url;
+                    }
                 }
             }
+            catch {
+                // fallback to throw below
+            }
         }
-        catch {
-            // fallback
-        }
-        // 5. Default fallback download URL (paper default)
-        return `https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/496/downloads/paper-1.20.4-496.jar`;
+        // 5. Fail loudly instead of silently installing the wrong software
+        throw new Error(`Could not resolve a download URL for ${software} ${version}. ` +
+            `The ${software} API may be unreachable from this host or the version may not exist.`);
     }
 }
 exports.MinecraftJarService = MinecraftJarService;
