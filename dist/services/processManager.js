@@ -16,8 +16,14 @@ class ProcessManager extends events_1.EventEmitter {
     consoleLogsBuffer = new Map();
     serverIdCache = new Map();
     stopTimers = new Map();
+    // Partial line buffers for stdout/stderr (chunks may not end on \n)
+    stdoutBuffers = new Map();
+    stderrBuffers = new Map();
+    // Monotonically increasing event ID per server
+    eventCounters = new Map();
     logQueue = [];
     logTimer = null;
+    static MAX_REPLAY_BUFFER = 2000;
     constructor() {
         super();
     }
@@ -40,6 +46,12 @@ class ProcessManager extends events_1.EventEmitter {
         }
         catch { }
         return null;
+    }
+    nextEventId(serverUuid) {
+        const current = this.eventCounters.get(serverUuid) || 0;
+        const next = current + 1;
+        this.eventCounters.set(serverUuid, next);
+        return next;
     }
     queueDbLog(serverId, message) {
         this.logQueue.push({ serverId, message });
@@ -70,43 +82,73 @@ class ProcessManager extends events_1.EventEmitter {
             this.logTimer = setTimeout(() => this.flushLogQueue(), 100);
         }
     }
-    // Append a console log line to buffer, DB, and emit live SSE event
-    logOutput(serverUuid, message) {
-        const cleanMsg = message.trim();
+    // Create a structured ConsoleEvent and emit it
+    logOutput(serverUuid, message, type = 'stdout') {
+        const cleanMsg = message.trimEnd();
         if (!cleanMsg)
             return;
+        const evt = {
+            id: this.nextEventId(serverUuid),
+            timestamp: new Date().toISOString(),
+            type,
+            line: cleanMsg
+        };
+        // Push to replay buffer
         if (!this.consoleLogsBuffer.has(serverUuid)) {
             this.consoleLogsBuffer.set(serverUuid, []);
         }
         const buffer = this.consoleLogsBuffer.get(serverUuid);
-        buffer.push(cleanMsg);
-        // Keep buffer capped at 500 lines for memory efficiency
-        if (buffer.length > 500) {
+        buffer.push(evt);
+        // Cap replay buffer
+        while (buffer.length > ProcessManager.MAX_REPLAY_BUFFER) {
             buffer.shift();
         }
-        // Queue DB log write asynchronously to avoid blocking the event loop
+        // Queue DB log write asynchronously
         const serverId = this.getServerId(serverUuid);
         if (serverId) {
             this.queueDbLog(serverId, cleanMsg);
         }
-        // Emit live SSE event for subscribers
-        this.emit(`console:${serverUuid}`, cleanMsg);
+        // Emit structured event for SSE subscribers
+        this.emit(`console:${serverUuid}`, evt);
     }
-    getConsoleLogs(serverUuid) {
+    // Get recent console history as structured events
+    getConsoleHistory(serverUuid) {
         if (this.consoleLogsBuffer.has(serverUuid)) {
             return this.consoleLogsBuffer.get(serverUuid);
         }
+        // Fallback: load from DB
         try {
             const serverId = this.getServerId(serverUuid);
             if (serverId) {
                 const rows = database_1.db.prepare('SELECT message FROM server_logs WHERE server_id = ? ORDER BY id DESC LIMIT 200').all(serverId);
-                const logs = rows.map(r => r.message).reverse();
-                this.consoleLogsBuffer.set(serverUuid, logs);
-                return logs;
+                const events = rows.map(r => r.message).reverse().map(line => ({
+                    id: this.nextEventId(serverUuid),
+                    timestamp: new Date().toISOString(),
+                    type: 'stdout',
+                    line
+                }));
+                this.consoleLogsBuffer.set(serverUuid, events);
+                return events;
             }
         }
         catch { }
         return [];
+    }
+    // Get events after a given event ID for SSE reconnection replay
+    getEventsSince(serverUuid, lastEventId) {
+        const buffer = this.consoleLogsBuffer.get(serverUuid);
+        if (!buffer || buffer.length === 0)
+            return [];
+        // Find events with id > lastEventId
+        const idx = buffer.findIndex(e => e.id > lastEventId);
+        if (idx === -1)
+            return [];
+        return buffer.slice(idx);
+    }
+    // Legacy compat: return string array for initial page render
+    getConsoleLogs(serverUuid) {
+        const history = this.getConsoleHistory(serverUuid);
+        return history.map(e => e.line);
     }
     isPidAlive(pid) {
         if (!pid || pid <= 0)
@@ -147,16 +189,39 @@ class ProcessManager extends events_1.EventEmitter {
             this.stopTimers.delete(serverUuid);
         }
     }
+    // Process stdout/stderr chunks with proper partial line buffering
+    processStreamChunk(serverUuid, data, bufferMap, type) {
+        const text = data.toString('utf-8');
+        const existing = bufferMap.get(serverUuid) || '';
+        const combined = existing + text;
+        const lines = combined.split(/\r?\n/);
+        // Last element is either empty (if chunk ended with \n) or a partial line
+        const remainder = lines.pop() || '';
+        bufferMap.set(serverUuid, remainder);
+        for (const line of lines) {
+            if (line.trim()) {
+                this.logOutput(serverUuid, line, type);
+            }
+        }
+    }
+    // Flush remaining partial line from buffer (called on process exit)
+    flushStreamBuffer(serverUuid, bufferMap, type) {
+        const remainder = bufferMap.get(serverUuid);
+        if (remainder && remainder.trim()) {
+            this.logOutput(serverUuid, remainder, type);
+        }
+        bufferMap.delete(serverUuid);
+    }
     startServer(server) {
         this.clearStopTimer(server.uuid);
         if (this.isProcessRunning(server.uuid)) {
-            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process is already active.`);
+            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process is already active.`, 'system');
             return false;
         }
         const workingDir = server.directory || path_1.default.join(process.cwd(), 'storage', 'servers', server.uuid);
         const jarPath = path_1.default.join(workingDir, server.jar_file || 'server.jar');
         if (!fs_1.default.existsSync(jarPath)) {
-            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Jar file not found at ${jarPath}. Reinstall server jar.`);
+            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Jar file not found at ${jarPath}. Reinstall server jar.`, 'system');
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
@@ -171,9 +236,9 @@ class ProcessManager extends events_1.EventEmitter {
             server.jar_file || 'server.jar',
             `--nogui`
         ];
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Starting Java process (${server.software} ${server.version})...`);
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Directory: ${workingDir}`);
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Command: java ${args.join(' ')}`);
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Starting Java process (${server.software} ${server.version})...`, 'system');
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Directory: ${workingDir}`, 'system');
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Command: java ${args.join(' ')}`, 'system');
         let child;
         try {
             child = (0, child_process_1.spawn)('java', args, {
@@ -183,7 +248,7 @@ class ProcessManager extends events_1.EventEmitter {
             });
         }
         catch (e) {
-            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Launch failed: ${e.message}`);
+            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Launch failed: ${e.message}`, 'system');
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
@@ -204,39 +269,36 @@ class ProcessManager extends events_1.EventEmitter {
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             if (err.code === 'ENOENT') {
-                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] ❌ Java runtime binary ("java") was not found on the host system.`);
+                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Java runtime binary ("java") was not found on the host system.`, 'system');
             }
             else {
-                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process launch error: ${err.message}`);
+                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process launch error: ${err.message}`, 'system');
             }
         });
         if (!child.pid) {
-            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Failed to obtain Java process PID.`);
+            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Failed to obtain Java process PID.`, 'system');
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
         }
         this.activeProcesses.set(server.uuid, child);
         serverModel_1.ServerModel.updateRuntimeState(server.id, 'online', child.pid);
+        // Clear any stale partial line buffers
+        this.stdoutBuffers.delete(server.uuid);
+        this.stderrBuffers.delete(server.uuid);
+        // Attach stdout/stderr with proper partial line buffering
         child.stdout?.on('data', (data) => {
-            const text = data.toString('utf-8');
-            const lines = text.split(/\r?\n/);
-            for (const line of lines) {
-                if (line.trim())
-                    this.logOutput(server.uuid, line);
-            }
+            this.processStreamChunk(server.uuid, data, this.stdoutBuffers, 'stdout');
         });
         child.stderr?.on('data', (data) => {
-            const text = data.toString('utf-8');
-            const lines = text.split(/\r?\n/);
-            for (const line of lines) {
-                if (line.trim())
-                    this.logOutput(server.uuid, `[WARN] ${line}`);
-            }
+            this.processStreamChunk(server.uuid, data, this.stderrBuffers, 'stderr');
         });
         child.on('close', (code) => {
             this.clearStopTimer(server.uuid);
-            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process terminated with exit code: ${code}`);
+            // Flush any remaining partial line data
+            this.flushStreamBuffer(server.uuid, this.stdoutBuffers, 'stdout');
+            this.flushStreamBuffer(server.uuid, this.stderrBuffers, 'stderr');
+            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process terminated with exit code: ${code}`, 'system');
             this.activeProcesses.delete(server.uuid);
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
@@ -253,7 +315,7 @@ class ProcessManager extends events_1.EventEmitter {
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
         }
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Sending "stop" command to Java process STDIN...`);
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Sending "stop" command to Java process STDIN...`, 'system');
         serverModel_1.ServerModel.updateRuntimeState(server.id, 'stopping', targetPid);
         this.emit(`status:${server.uuid}`, { status: 'stopping', pid: targetPid });
         let sentStdin = false;
@@ -278,7 +340,7 @@ class ProcessManager extends events_1.EventEmitter {
         const timer = setTimeout(() => {
             this.stopTimers.delete(server.uuid);
             if (this.isProcessRunning(server.uuid)) {
-                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Graceful stop timeout. Sending SIGTERM to PID ${targetPid}...`);
+                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Graceful stop timeout. Sending SIGTERM to PID ${targetPid}...`, 'system');
                 try {
                     process.kill(targetPid, 'SIGTERM');
                 }
@@ -286,7 +348,7 @@ class ProcessManager extends events_1.EventEmitter {
                 // Secondary fallback: SIGKILL after 3 more seconds if still alive
                 setTimeout(() => {
                     if (this.isProcessRunning(server.uuid)) {
-                        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Process unresponsive. Force killing PID ${targetPid} (SIGKILL)...`);
+                        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Process unresponsive. Force killing PID ${targetPid} (SIGKILL)...`, 'system');
                         this.killServer(server);
                     }
                 }, 3000);
@@ -296,7 +358,7 @@ class ProcessManager extends events_1.EventEmitter {
         return true;
     }
     restartServer(server) {
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Restarting server instance...`);
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Restarting server instance...`, 'system');
         if (this.isProcessRunning(server.uuid)) {
             this.stopServer(server);
             // Poll every second until process terminates or max 12 seconds
@@ -306,7 +368,7 @@ class ProcessManager extends events_1.EventEmitter {
                 if (!this.isProcessRunning(server.uuid) || attempts >= 12) {
                     clearInterval(checkInterval);
                     if (this.isProcessRunning(server.uuid)) {
-                        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Restart force killing lingering process...`);
+                        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Restart force killing lingering process...`, 'system');
                         this.killServer(server);
                     }
                     setTimeout(() => {
@@ -325,7 +387,7 @@ class ProcessManager extends events_1.EventEmitter {
         this.clearStopTimer(server.uuid);
         const child = this.activeProcesses.get(server.uuid);
         const targetPid = child?.pid || server.pid;
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Force killing Java process (SIGKILL)...`);
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Force killing Java process (SIGKILL)...`, 'system');
         if (child) {
             try {
                 child.kill('SIGKILL');
@@ -343,6 +405,9 @@ class ProcessManager extends events_1.EventEmitter {
             }
             catch { }
         }
+        // Flush remaining partial line buffers
+        this.flushStreamBuffer(server.uuid, this.stdoutBuffers, 'stdout');
+        this.flushStreamBuffer(server.uuid, this.stderrBuffers, 'stderr');
         serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
         this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
         return true;
@@ -353,7 +418,7 @@ class ProcessManager extends events_1.EventEmitter {
             return false;
         }
         const cleanCmd = command.trim();
-        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [Command] > ${cleanCmd}`);
+        this.logOutput(server.uuid, `> ${cleanCmd}`, 'command');
         try {
             child.stdin.write(`${cleanCmd}\n`);
             return true;
@@ -370,9 +435,9 @@ class ProcessManager extends events_1.EventEmitter {
             return {
                 isRunning: false,
                 status: currentStatus === 'online' ? 'offline' : currentStatus,
-                cpuText: 'Not Running',
-                ramText: 'Waiting for Java process...',
-                playersText: 'No players online',
+                cpuText: 'N/A',
+                ramText: 'N/A',
+                playersText: '0 players',
                 cpuVal: 0,
                 ramValMb: 0
             };
@@ -380,11 +445,11 @@ class ProcessManager extends events_1.EventEmitter {
         return {
             isRunning: true,
             status: currentStatus || 'online',
-            cpuText: '12%',
-            ramText: '380 MB',
+            cpuText: 'N/A',
+            ramText: 'N/A',
             playersText: '0 players',
-            cpuVal: 12,
-            ramValMb: 380
+            cpuVal: 0,
+            ramValMb: 0
         };
     }
 }

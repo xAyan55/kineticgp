@@ -5,7 +5,7 @@
 
   <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
     <!-- Top Bar / Breadcrumb Navigation -->
-    <header class="h-16 px-6 lg:px-10 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
+    <header class="h-14 px-4 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
       <div class="flex items-center gap-2 text-sm text-neutral-400">
         <span class="text-white font-medium">Servers</span>
         <span>/</span>
@@ -14,199 +14,188 @@
         <span class="text-neutral-300">Console</span>
       </div>
 
-      <!-- ENTERPRISE SERVER CONTROLS TOOLBAR -->
-      <div class="flex items-center gap-2">
+      <!-- POWER CONTROLS TOOLBAR -->
+      <div class="flex items-center gap-1.5">
         <% if (server.status === 'failed') { %>
           <form method="POST" action="/admin/servers/<%= server.id %>/retry" class="inline">
             <input type="hidden" name="_csrf" value="<%= _csrf %>">
-            <button type="submit" class="py-1.5 px-3 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              Retry Installation
+            <button type="submit" class="py-1.5 px-3 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+              Retry
             </button>
           </form>
         <% } else if (['installing', 'downloading', 'configuring', 'queued'].includes(server.status)) { %>
-          <button disabled class="py-1.5 px-4 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 text-xs font-semibold cursor-not-allowed opacity-80 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-            Installing Engine...
+          <button disabled class="py-1.5 px-3 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/30 text-xs font-semibold cursor-not-allowed opacity-80 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+            Installing...
           </button>
         <% } else { %>
-          <button id="startBtn" onclick="sendPowerAction(event, 'start')" <%= server.status === 'online' ? 'disabled' : '' %> class="py-1.5 px-3.5 rounded-xl <%= server.status === 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold' %> text-xs transition flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+          <button id="startBtn" onclick="sendPowerAction(event, 'start')" <%= server.status === 'online' ? 'disabled' : '' %> class="py-1.5 px-3 rounded-lg <%= server.status === 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold' %> text-xs transition flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
             Start
           </button>
 
-          <button id="restartBtn" onclick="sendPowerAction(event, 'restart')" <%= server.status !== 'online' ? 'disabled' : '' %> class="py-1.5 px-3.5 rounded-xl <%= server.status !== 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold' %> text-xs transition flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <button id="restartBtn" onclick="sendPowerAction(event, 'restart')" <%= server.status !== 'online' ? 'disabled' : '' %> class="py-1.5 px-3 rounded-lg <%= server.status !== 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold' %> text-xs transition flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             Restart
           </button>
 
-          <button id="stopBtn" onclick="sendPowerAction(event, 'stop')" <%= server.status !== 'online' ? 'disabled' : '' %> class="py-1.5 px-3.5 rounded-xl <%= server.status !== 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold' %> text-xs transition flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+          <button id="stopBtn" onclick="sendPowerAction(event, 'stop')" <%= server.status !== 'online' ? 'disabled' : '' %> class="py-1.5 px-3 rounded-lg <%= server.status !== 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold' %> text-xs transition flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
             Stop
           </button>
 
-          <button id="killBtn" onclick="sendPowerAction(event, 'kill')" title="Force Kill Process" <%= server.status !== 'online' ? 'disabled' : '' %> class="py-1.5 px-3 rounded-xl <%= server.status !== 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold' %> text-xs transition">
+          <button id="killBtn" onclick="sendPowerAction(event, 'kill')" title="Force Kill" <%= server.status !== 'online' ? 'disabled' : '' %> class="py-1.5 px-2.5 rounded-lg <%= server.status !== 'online' ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed' : 'bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold' %> text-xs transition">
             Kill
           </button>
 
-          <a href="/dashboard/server/<%= server.uuid %>/settings" title="Server Settings" class="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 text-xs font-semibold transition">
-            Settings
+          <a href="/dashboard/server/<%= server.uuid %>/settings" title="Settings" class="py-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 text-xs font-semibold transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </a>
         <% } %>
       </div>
     </header>
 
-    <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-6 flex-1">
-      <!-- ENTERPRISE SERVER HEADER CARD -->
-      <div class="kgp-card p-6 border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-gradient-to-r from-[#141618] to-[#101213]">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-[#1873d3]/10 border border-[#1873d3]/30 flex items-center justify-center text-[#1873d3] font-bold text-xl flex-shrink-0">
-            MC
-          </div>
-          <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-2xl font-extrabold text-white"><%= server.name %></h1>
-              <% 
-                let badgeStyle = 'bg-neutral-800 text-neutral-400 border-neutral-700';
-                if (server.status === 'online') badgeStyle = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-                else if (['installing', 'downloading', 'configuring', 'queued'].includes(server.status)) badgeStyle = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-                else if (server.status === 'failed') badgeStyle = 'bg-red-500/10 text-red-400 border-red-500/30';
-              %>
-              <span id="headerStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border <%= badgeStyle %>">
-                <%= server.status %>
-              </span>
-            </div>
-            <p class="text-xs text-neutral-400 font-mono mt-1">
-              UUID: <%= server.uuid %> &bull; Owner: <%= server.owner_name || 'Administrator' %> &bull; Engine: <%= server.software %> <%= server.version %> (Java <%= server.java_version %>)
-            </p>
-          </div>
-        </div>
-      </div>
+    <div class="px-4 lg:px-8 py-4 max-w-[1600px] w-full mx-auto flex-1 flex flex-col gap-3">
 
-      <!-- LIVE INSTALLER PROGRESS & TIMELINE CARD (Only if Installing) -->
-      <div id="installerSection" class="kgp-card p-6 border-purple-500/20 bg-purple-500/[0.02] <%= ['installing', 'downloading', 'configuring', 'queued'].includes(server.status) ? '' : 'hidden' %>">
-        <div class="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
-          <div class="flex items-center gap-3">
-            <span class="w-3 h-3 rounded-full bg-purple-400 animate-pulse"></span>
-            <h3 class="text-base font-bold text-white">Background Provisioning Pipeline</h3>
+      <!-- LIVE INSTALLER PROGRESS (Only if Installing) -->
+      <div id="installerSection" class="kgp-card p-5 border-purple-500/20 bg-purple-500/[0.02] <%= ['installing', 'downloading', 'configuring', 'queued'].includes(server.status) ? '' : 'hidden' %>">
+        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></span>
+            <h3 class="text-sm font-bold text-white">Provisioning Pipeline</h3>
           </div>
           <span id="installProgressSpeed" class="text-xs font-mono text-purple-400 font-bold">Downloading...</span>
         </div>
-
-        <div class="space-y-4">
-          <div>
-            <div class="flex justify-between text-xs text-neutral-300 font-mono mb-1.5">
-              <span id="installStepText">Downloading <%= server.software %> <%= server.version %> server.jar</span>
-              <span id="installBytesText">Receiving jar...</span>
-            </div>
-            <div class="w-full h-2 rounded-full bg-neutral-900 overflow-hidden border border-white/5">
-              <div id="installProgressBar" class="h-full bg-purple-500 rounded-full transition-all duration-300" style="width: 10%"></div>
-            </div>
+        <div>
+          <div class="flex justify-between text-xs text-neutral-300 font-mono mb-1">
+            <span id="installStepText">Downloading <%= server.software %> <%= server.version %> server.jar</span>
+            <span id="installBytesText">Receiving jar...</span>
           </div>
-
-          <!-- VERTICAL TIMELINE -->
-          <div class="pt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
-            <div class="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-2 text-emerald-400">
-              <span>✔</span> Server Record Created
-            </div>
-            <div class="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-2 text-emerald-400">
-              <span>✔</span> Directory & EULA
-            </div>
-            <div id="tlStep3" class="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-2 text-purple-400">
-              <span class="animate-spin">🌀</span> Downloading JAR
-            </div>
-            <div id="tlStep4" class="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-2 text-neutral-500">
-              <span>○</span> Java Engine Ready
-            </div>
+          <div class="w-full h-1.5 rounded-full bg-neutral-900 overflow-hidden border border-white/5">
+            <div id="installProgressBar" class="h-full bg-purple-500 rounded-full transition-all duration-300" style="width: 10%"></div>
           </div>
         </div>
       </div>
 
-      <!-- HONEST REAL-TIME METRICS CARDS -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Status -->
-        <div class="kgp-card p-4">
-          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Status</span>
-          <div class="flex items-center gap-2 mt-1">
-            <% 
+      <!-- COMPACT STATUS BAR -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
+          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">Status</span>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <%
               let indicatorClass = 'bg-neutral-600';
               if (server.status === 'online') indicatorClass = 'bg-emerald-400 animate-pulse';
               else if (['installing', 'downloading', 'configuring', 'queued'].includes(server.status)) indicatorClass = 'bg-purple-400 animate-pulse';
               else if (server.status === 'failed') indicatorClass = 'bg-red-500';
             %>
-            <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full <%= indicatorClass %>"></span>
-            <span id="statusText" class="text-lg font-bold text-white uppercase"><%= server.status %></span>
+            <span id="statusIndicator" class="w-2 h-2 rounded-full <%= indicatorClass %>"></span>
+            <span id="statusText" class="text-sm font-bold text-white uppercase"><%= server.status %></span>
+            <span id="headerStatusBadge" class="hidden"><%= server.status %></span>
           </div>
         </div>
-
-        <!-- CPU Load -->
-        <div class="kgp-card p-4">
-          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">CPU Load</span>
-          <p id="cpuVal" class="text-sm font-bold text-white mt-1"><%= metrics.cpuText %></p>
-          <div class="w-full h-1 bg-neutral-800 rounded-full mt-2 overflow-hidden">
+        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
+          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">CPU</span>
+          <p id="cpuVal" class="text-sm font-bold text-white mt-0.5"><%= metrics.cpuText %></p>
+          <div class="w-full h-0.5 bg-neutral-800 rounded-full mt-1 overflow-hidden">
             <div id="cpuBar" class="h-full bg-[#1873d3] rounded-full transition-all" style="width: <%= metrics.cpuVal %>%"></div>
           </div>
         </div>
-
-        <!-- RAM Memory -->
-        <div class="kgp-card p-4">
-          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">RAM Memory</span>
-          <p id="ramVal" class="text-sm font-bold text-white mt-1"><%= metrics.ramText %></p>
-          <div class="w-full h-1 bg-neutral-800 rounded-full mt-2 overflow-hidden">
+        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
+          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">Memory</span>
+          <p id="ramVal" class="text-sm font-bold text-white mt-0.5"><%= metrics.ramText %></p>
+          <div class="w-full h-0.5 bg-neutral-800 rounded-full mt-1 overflow-hidden">
             <div id="ramBar" class="h-full bg-emerald-400 rounded-full transition-all" style="width: <%= metrics.isRunning ? Math.round((metrics.ramValMb / server.ram_limit) * 100) : 0 %>%"></div>
           </div>
         </div>
-
-        <!-- Connection Address -->
-        <div class="kgp-card p-4">
-          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Connection Address</span>
-          <p class="text-sm font-bold font-mono text-emerald-400 mt-1 truncate">127.0.0.1:<%= server.port %></p>
-          <span id="playersText" class="text-[10px] text-neutral-500 font-mono mt-1 block"><%= metrics.playersText %></span>
+        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
+          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">Address</span>
+          <p class="text-sm font-bold font-mono text-emerald-400 mt-0.5 truncate">127.0.0.1:<%= server.port %></p>
+          <span id="playersText" class="text-[9px] text-neutral-500 font-mono block"><%= metrics.playersText %></span>
         </div>
       </div>
 
-      <!-- LIVE REAL CONSOLE TERMINAL -->
-      <div class="kgp-card p-4 sm:p-6 flex flex-col space-y-4 border-white/10 bg-[#0d0e0f]">
-        <div class="flex items-center justify-between border-b border-white/5 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-red-500"></span>
-            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-            <span class="text-xs font-mono text-neutral-400 ml-2">server@kineticgp:~ (UUID: <%= server.uuid %>)</span>
-          </div>
+      <!-- CONSOLE TERMINAL CARD -->
+      <div class="bg-[#0d0e0f] rounded-xl border border-white/[0.06] flex flex-col flex-1 min-h-0" style="min-height: 60vh;">
 
+        <!-- Terminal Header -->
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 flex-shrink-0">
           <div class="flex items-center gap-2">
-            <button onclick="copyConsole()" class="text-xs text-neutral-400 hover:text-white px-2.5 py-1 rounded-md bg-white/5">Copy Console</button>
-            <button onclick="clearConsole()" class="text-xs text-neutral-400 hover:text-white px-2.5 py-1 rounded-md bg-white/5">Clear</button>
-            <button onclick="toggleAutoscroll()" id="scrollBtn" class="text-xs text-emerald-400 px-2.5 py-1 rounded-md bg-emerald-500/10">Autoscroll ON</button>
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+            <span class="text-[11px] text-neutral-500 ml-1.5" style="font-family: 'JetBrains Mono', monospace;">server@kineticgp:~</span>
+            <!-- Connection Indicator -->
+            <span id="connectionDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-2"></span>
+            <span id="connectionText" class="text-[10px] text-emerald-400/80">Connected</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="clearConsole()" class="text-[11px] text-neutral-500 hover:text-neutral-300 px-2 py-1 rounded hover:bg-white/5 transition">Clear</button>
+            <button onclick="copyConsole()" class="text-[11px] text-neutral-500 hover:text-neutral-300 px-2 py-1 rounded hover:bg-white/5 transition">Copy</button>
+            <button onclick="toggleAutoscroll()" id="scrollBtn" class="text-[11px] text-emerald-400 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/15 transition">⇊ Auto</button>
           </div>
         </div>
 
-        <!-- TERMINAL OUTPUT STREAM -->
-        <div id="consoleTerminal" class="h-[480px] overflow-y-auto font-mono text-xs text-neutral-200 bg-[#0a0b0c] p-4 rounded-xl border border-white/5 space-y-1 custom-scrollbar">
+        <!-- Terminal Output Stream -->
+        <div id="consoleTerminal" class="flex-1 overflow-y-auto px-4 py-3 min-h-0" style="font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6;">
           <% if (logs.length === 0) { %>
-            <p class="text-neutral-500">[System] Real-time log stream initialized. Waiting for process output...</p>
+            <div class="text-neutral-600">[System] Real-time console stream initialized. Waiting for process output...</div>
           <% } else { %>
             <% logs.forEach(function(line) { %>
-              <div class="leading-relaxed hover:bg-white/[0.02] px-1 rounded"><%= line %></div>
+              <div class="console-line hover:bg-white/[0.015] rounded-sm px-1 -mx-1"><%= line %></div>
             <% }); %>
           <% } %>
         </div>
 
-        <!-- STDIN COMMAND INPUT -->
-        <form id="commandForm" class="flex items-center gap-2 pt-2">
-          <span class="text-neutral-500 font-mono text-sm pl-2">&gt;</span>
-          <input type="text" id="cmdInput" <%= server.status !== 'online' ? 'disabled' : '' %> placeholder="<%= server.status === 'online' ? 'Type a server command (e.g. op username, list, say Hello)...' : 'Console input will become available once the server Java process is running.' %>" class="flex-1 px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-xs text-white font-mono focus:outline-none focus:border-[#1873d3] <%= server.status !== 'online' ? 'opacity-50 cursor-not-allowed' : '' %>">
-          <button type="submit" <%= server.status !== 'online' ? 'disabled' : '' %> class="btn-primary text-xs px-5 py-2.5 <%= server.status !== 'online' ? 'opacity-50 cursor-not-allowed' : '' %>">Send</button>
-        </form>
+        <!-- Jump to Latest Button (hidden by default) -->
+        <div id="jumpToLatest" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
+          <button onclick="jumpToBottom()" class="px-3 py-1.5 rounded-full bg-[#1873d3] text-white text-[11px] font-semibold shadow-lg shadow-black/30 hover:bg-[#1462b8] transition flex items-center gap-1">
+            ↓ Jump to latest
+          </button>
+        </div>
+
+        <!-- Command Input Bar -->
+        <div class="border-t border-white/5 flex-shrink-0">
+          <form id="commandForm" class="flex items-center">
+            <span class="text-neutral-600 pl-4 text-sm" style="font-family: 'JetBrains Mono', monospace;">&gt;</span>
+            <input type="text" id="cmdInput" <%= server.status !== 'online' ? 'disabled' : '' %> placeholder="<%= server.status === 'online' ? 'Type a server command...' : 'Server is offline' %>" class="flex-1 px-3 py-3 bg-transparent text-neutral-200 text-xs focus:outline-none placeholder-neutral-600 disabled:opacity-40 disabled:cursor-not-allowed" style="font-family: 'JetBrains Mono', monospace;">
+            <button type="submit" id="cmdSendBtn" <%= server.status !== 'online' ? 'disabled' : '' %> class="px-4 py-3 text-xs font-semibold text-[#1873d3] hover:text-white hover:bg-[#1873d3]/20 transition disabled:opacity-30 disabled:cursor-not-allowed" style="font-family: 'JetBrains Mono', monospace;">Send</button>
+          </form>
+        </div>
       </div>
     </div>
   </main>
 </div>
 
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+  <div class="bg-[#1a1c1e] border border-white/10 rounded-lg px-4 py-2.5 text-xs text-neutral-300 shadow-xl shadow-black/40 flex items-center gap-2">
+    <span id="toastText"></span>
+  </div>
+</div>
+
+<style>
+  #consoleTerminal::-webkit-scrollbar { width: 6px; }
+  #consoleTerminal::-webkit-scrollbar-track { background: transparent; }
+  #consoleTerminal::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+  #consoleTerminal::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+</style>
+
 <script>
+  const SERVER_UUID = '<%= server.uuid %>';
+  const CSRF_TOKEN = '<%= _csrf %>';
+  const MAX_DOM_LINES = 3000;
+
   let autoscroll = true;
+  let lastSeenEventId = 0;
+  let seenEventIds = new Set();
   const terminal = document.getElementById('consoleTerminal');
+  const jumpBtn = document.getElementById('jumpToLatest');
+
+  // ── Auto-scroll detection ──
+  function isNearBottom() {
+    if (!terminal) return true;
+    return (terminal.scrollHeight - terminal.scrollTop - terminal.clientHeight) < 60;
+  }
 
   function scrollToBottom() {
     if (autoscroll && terminal) {
@@ -214,203 +203,339 @@
     }
   }
 
+  terminal.addEventListener('scroll', () => {
+    if (isNearBottom()) {
+      autoscroll = true;
+      jumpBtn.classList.add('hidden');
+    } else {
+      autoscroll = false;
+      jumpBtn.classList.remove('hidden');
+    }
+  });
+
+  function jumpToBottom() {
+    autoscroll = true;
+    terminal.scrollTop = terminal.scrollHeight;
+    jumpBtn.classList.add('hidden');
+    updateScrollBtn();
+  }
+
+  function toggleAutoscroll() {
+    autoscroll = !autoscroll;
+    updateScrollBtn();
+    if (autoscroll) {
+      terminal.scrollTop = terminal.scrollHeight;
+      jumpBtn.classList.add('hidden');
+    }
+  }
+
+  function updateScrollBtn() {
+    const btn = document.getElementById('scrollBtn');
+    if (autoscroll) {
+      btn.innerText = '⇊ Auto';
+      btn.className = 'text-[11px] text-emerald-400 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/15 transition';
+    } else {
+      btn.innerText = '⇊ Off';
+      btn.className = 'text-[11px] text-neutral-500 px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition';
+    }
+  }
+
+  // ── Console line rendering with semantic colors ──
+  function getLineClass(line, type) {
+    if (type === 'command') return 'text-cyan-400';
+    if (type === 'system') return 'text-[#1873d3]';
+    if (type === 'stderr') return 'text-amber-400';
+    if (/\bERROR\b/i.test(line)) return 'text-red-400';
+    if (/\bWARN/i.test(line)) return 'text-amber-400/90';
+    if (/\[System\]/i.test(line)) return 'text-[#1873d3]';
+    return 'text-neutral-300';
+  }
+
+  function appendConsoleLine(line, type) {
+    const div = document.createElement('div');
+    div.className = 'console-line hover:bg-white/[0.015] rounded-sm px-1 -mx-1 ' + getLineClass(line, type);
+    div.textContent = line;
+    terminal.appendChild(div);
+
+    // Cap DOM nodes
+    while (terminal.children.length > MAX_DOM_LINES) {
+      terminal.removeChild(terminal.firstChild);
+    }
+
+    scrollToBottom();
+  }
+
+  // ── Console actions ──
   function clearConsole() {
-    terminal.innerHTML = '<p class="text-neutral-500">[Console cleared]</p>';
+    terminal.innerHTML = '<div class="text-neutral-600">[Console view cleared]</div>';
+    showToast('Console view cleared');
   }
 
   function copyConsole() {
     const text = terminal.innerText;
     navigator.clipboard.writeText(text).then(() => {
-      alert('Console logs copied to clipboard!');
+      showToast('Console copied to clipboard');
+    }).catch(() => {
+      showToast('Failed to copy');
     });
   }
 
-  function toggleAutoscroll() {
-    autoscroll = !autoscroll;
-    const btn = document.getElementById('scrollBtn');
-    if (autoscroll) {
-      btn.innerText = 'Autoscroll ON';
-      btn.className = 'text-xs text-emerald-400 px-2.5 py-1 rounded-md bg-emerald-500/10';
-      scrollToBottom();
-    } else {
-      btn.innerText = 'Autoscroll OFF';
-      btn.className = 'text-xs text-neutral-400 px-2.5 py-1 rounded-md bg-white/5';
-    }
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    toastText.textContent = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 2500);
   }
 
   scrollToBottom();
 
-  // Dynamic Power Buttons UI State Synchronizer
+  // ── Power Buttons State ──
   function updatePowerButtonsState(status) {
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
     const stopBtn = document.getElementById('stopBtn');
     const killBtn = document.getElementById('killBtn');
+    const cmdInput = document.getElementById('cmdInput');
+    const cmdSendBtn = document.getElementById('cmdSendBtn');
 
     if (!startBtn || !restartBtn || !stopBtn || !killBtn) return;
 
+    const disabledCls = 'py-1.5 px-3 rounded-lg bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1';
+    const killDisabledCls = 'py-1.5 px-2.5 rounded-lg bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition';
+
     if (status === 'online') {
       startBtn.disabled = true;
-      startBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
-
+      startBtn.className = disabledCls;
       restartBtn.disabled = false;
-      restartBtn.className = 'py-1.5 px-3.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-xs transition flex items-center gap-1.5';
-
+      restartBtn.className = 'py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-xs transition flex items-center gap-1';
       stopBtn.disabled = false;
-      stopBtn.className = 'py-1.5 px-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1.5';
-
+      stopBtn.className = 'py-1.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1';
       killBtn.disabled = false;
-      killBtn.className = 'py-1.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+      killBtn.className = 'py-1.5 px-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+      if (cmdInput) { cmdInput.disabled = false; cmdInput.placeholder = 'Type a server command...'; }
+      if (cmdSendBtn) cmdSendBtn.disabled = false;
     } else if (status === 'starting' || status === 'stopping') {
-      startBtn.disabled = true;
-      startBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
-
-      restartBtn.disabled = true;
-      restartBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
-
-      stopBtn.disabled = true;
-      stopBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
-
+      startBtn.disabled = true; startBtn.className = disabledCls;
+      restartBtn.disabled = true; restartBtn.className = disabledCls;
+      stopBtn.disabled = status === 'stopping'; stopBtn.className = status === 'stopping' ? disabledCls : 'py-1.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1';
       killBtn.disabled = false;
-      killBtn.className = 'py-1.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
-    } else { // offline / failed
+      killBtn.className = 'py-1.5 px-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+      if (cmdInput) { cmdInput.disabled = true; cmdInput.placeholder = status === 'starting' ? 'Server is starting...' : 'Server is stopping...'; }
+      if (cmdSendBtn) cmdSendBtn.disabled = true;
+    } else {
       startBtn.disabled = false;
-      startBtn.className = 'py-1.5 px-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition flex items-center gap-1.5';
-
-      restartBtn.disabled = true;
-      restartBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
-
-      stopBtn.disabled = true;
-      stopBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
-
-      killBtn.disabled = true;
-      killBtn.className = 'py-1.5 px-3 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition';
+      startBtn.className = 'py-1.5 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition flex items-center gap-1';
+      restartBtn.disabled = true; restartBtn.className = disabledCls;
+      stopBtn.disabled = true; stopBtn.className = disabledCls;
+      killBtn.disabled = true; killBtn.className = killDisabledCls;
+      if (cmdInput) { cmdInput.disabled = true; cmdInput.placeholder = 'Server is offline'; }
+      if (cmdSendBtn) cmdSendBtn.disabled = true;
     }
   }
 
-  // Async Power Action Handler
+  // ── Power Actions ──
   async function sendPowerAction(e, action) {
     if (e) e.preventDefault();
-
     if (action === 'start') updatePowerButtonsState('starting');
     else if (action === 'stop') updatePowerButtonsState('stopping');
 
     try {
-      const res = await fetch('/dashboard/server/<%= server.uuid %>/power', {
+      const res = await fetch(`/dashboard/server/${SERVER_UUID}/power`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-Token': '<%= _csrf %>'
-        },
-        body: JSON.stringify({ action: action, _csrf: '<%= _csrf %>' })
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+        body: JSON.stringify({ action, _csrf: CSRF_TOKEN })
       });
       const data = await res.json();
-      if (data.status) {
-        updatePowerButtonsState(data.status);
-      }
+      if (data.status) updatePowerButtonsState(data.status);
       if (!data.success) {
-        const line = document.createElement('div');
-        line.className = 'leading-relaxed text-amber-400 font-bold px-1 rounded';
-        line.innerText = '[System] ' + (data.message || 'Power action failed.');
-        if (terminal) {
-          terminal.appendChild(line);
-          scrollToBottom();
-        }
+        appendConsoleLine('[System] ' + (data.message || 'Power action failed.'), 'system');
       }
     } catch (err) {
-      console.error('Power action network error:', err);
+      console.error('Power action error:', err);
+      appendConsoleLine('[System] Network error during power action.', 'system');
     }
   }
 
-  // STDIN Form
+  // ── Command History ──
+  let cmdHistory = JSON.parse(sessionStorage.getItem('kgp_cmd_history') || '[]');
+  let cmdHistoryIdx = -1;
+
+  // ── Command Form ──
   document.getElementById('commandForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const input = document.getElementById('cmdInput');
     const cmd = input.value.trim();
     if (!cmd) return;
 
-    fetch('/dashboard/server/<%= server.uuid %>/command', {
+    // Save to history
+    cmdHistory.unshift(cmd);
+    if (cmdHistory.length > 30) cmdHistory.pop();
+    sessionStorage.setItem('kgp_cmd_history', JSON.stringify(cmdHistory));
+    cmdHistoryIdx = -1;
+
+    fetch(`/dashboard/server/${SERVER_UUID}/command`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': '<%= _csrf %>'
-      },
-      body: JSON.stringify({ command: cmd, _csrf: '<%= _csrf %>' })
-    }).then(() => {
-      input.value = '';
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+      body: JSON.stringify({ command: cmd, _csrf: CSRF_TOKEN })
+    }).then(res => res.json()).then(data => {
+      if (!data.success) {
+        appendConsoleLine('[System] Failed to send command: ' + (data.message || 'Server may be offline.'), 'system');
+      }
+    }).catch(() => {
+      appendConsoleLine('[System] Network error sending command.', 'system');
     });
+
+    input.value = '';
   });
 
-  // Connect Real-Time SSE Stream
-  const eventSource = new EventSource('/dashboard/server/<%= server.uuid %>/sse');
-
-  eventSource.addEventListener('log', function(e) {
-    const data = JSON.parse(e.data);
-    if (data.message) {
-      const line = document.createElement('div');
-      line.className = 'leading-relaxed hover:bg-white/[0.02] px-1 rounded';
-      line.innerText = data.message;
-      terminal.appendChild(line);
-      scrollToBottom();
-    }
-  });
-
-  eventSource.addEventListener('progress', function(e) {
-    const p = JSON.parse(e.data);
-    const installerSec = document.getElementById('installerSection');
-
-    if (p.step === 'ready') {
-      if (installerSec) installerSec.classList.add('hidden');
-      location.reload();
-      return;
-    }
-
-    if (installerSec) installerSec.classList.remove('hidden');
-
-    if (p.percent !== undefined) {
-      document.getElementById('installProgressBar').style.width = p.percent + '%';
-    }
-    if (p.downloaded && p.total) {
-      document.getElementById('installBytesText').innerText = p.downloaded + ' / ' + p.total;
-    }
-    if (p.speed) {
-      document.getElementById('installProgressSpeed').innerText = p.speed;
-    }
-  });
-
-  eventSource.addEventListener('metrics', function(e) {
-    const m = JSON.parse(e.data);
-    if (m) {
-      document.getElementById('cpuVal').innerText = m.cpuText;
-      document.getElementById('cpuBar').style.width = m.cpuVal + '%';
-      document.getElementById('ramVal').innerText = m.ramText;
-      document.getElementById('playersText').innerText = m.playersText;
-      
-      const statusText = document.getElementById('statusText');
-      const statusInd = document.getElementById('statusIndicator');
-      const badge = document.getElementById('headerStatusBadge');
-
-      statusText.innerText = m.status;
-      if (badge) badge.innerText = m.status;
-
-      updatePowerButtonsState(m.status);
-
-      if (m.status === 'online') {
-        statusInd.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
-        if (badge) badge.className = 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      } else if (['installing', 'downloading', 'configuring', 'queued'].includes(m.status)) {
-        statusInd.className = 'w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse';
-        if (badge) badge.className = 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-purple-500/10 text-purple-400 border-purple-500/30';
-      } else if (m.status === 'failed') {
-        statusInd.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-        if (badge) badge.className = 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-red-500/10 text-red-400 border-red-500/30';
+  // Arrow up/down for command history
+  document.getElementById('cmdInput').addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (cmdHistory.length > 0 && cmdHistoryIdx < cmdHistory.length - 1) {
+        cmdHistoryIdx++;
+        this.value = cmdHistory[cmdHistoryIdx];
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (cmdHistoryIdx > 0) {
+        cmdHistoryIdx--;
+        this.value = cmdHistory[cmdHistoryIdx];
       } else {
-        statusInd.className = 'w-2.5 h-2.5 rounded-full bg-neutral-600';
-        if (badge) badge.className = 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-neutral-800 text-neutral-400 border-neutral-700';
+        cmdHistoryIdx = -1;
+        this.value = '';
       }
     }
   });
+
+  // ── SSE Connection ──
+  let eventSource = null;
+
+  function connectSSE() {
+    if (eventSource) {
+      eventSource.close();
+    }
+
+    eventSource = new EventSource(`/dashboard/server/${SERVER_UUID}/sse`);
+
+    eventSource.addEventListener('open', () => {
+      setConnectionStatus('connected');
+    });
+
+    eventSource.addEventListener('log', function(e) {
+      const data = JSON.parse(e.data);
+      if (data.message) {
+        // Deduplicate using event ID
+        const eventId = data.id || 0;
+        if (eventId > 0) {
+          if (seenEventIds.has(eventId)) return;
+          seenEventIds.add(eventId);
+          // Keep seenEventIds bounded
+          if (seenEventIds.size > 5000) {
+            const arr = Array.from(seenEventIds);
+            seenEventIds = new Set(arr.slice(-3000));
+          }
+          lastSeenEventId = Math.max(lastSeenEventId, eventId);
+        }
+        appendConsoleLine(data.message, data.type || 'stdout');
+      }
+    });
+
+    eventSource.addEventListener('status', function(e) {
+      const data = JSON.parse(e.data);
+      if (data && data.status) {
+        updatePowerButtonsState(data.status);
+        updateStatusDisplay(data.status);
+      }
+    });
+
+    eventSource.addEventListener('progress', function(e) {
+      const p = JSON.parse(e.data);
+      const installerSec = document.getElementById('installerSection');
+
+      if (p.step === 'ready') {
+        if (installerSec) installerSec.classList.add('hidden');
+        location.reload();
+        return;
+      }
+
+      if (installerSec) installerSec.classList.remove('hidden');
+
+      if (p.percent !== undefined) {
+        document.getElementById('installProgressBar').style.width = p.percent + '%';
+      }
+      if (p.downloaded && p.total) {
+        document.getElementById('installBytesText').innerText = p.downloaded + ' / ' + p.total;
+      }
+      if (p.speed) {
+        document.getElementById('installProgressSpeed').innerText = p.speed;
+      }
+    });
+
+    eventSource.addEventListener('metrics', function(e) {
+      const m = JSON.parse(e.data);
+      if (m) {
+        document.getElementById('cpuVal').innerText = m.cpuText;
+        document.getElementById('cpuBar').style.width = m.cpuVal + '%';
+        document.getElementById('ramVal').innerText = m.ramText;
+        document.getElementById('playersText').innerText = m.playersText;
+
+        updateStatusDisplay(m.status);
+        updatePowerButtonsState(m.status);
+      }
+    });
+
+    eventSource.addEventListener('error', () => {
+      if (eventSource.readyState === EventSource.CONNECTING) {
+        setConnectionStatus('reconnecting');
+      } else if (eventSource.readyState === EventSource.CLOSED) {
+        setConnectionStatus('disconnected');
+        // Attempt manual reconnect after 5s
+        setTimeout(connectSSE, 5000);
+      }
+    });
+  }
+
+  function setConnectionStatus(state) {
+    const dot = document.getElementById('connectionDot');
+    const text = document.getElementById('connectionText');
+    if (state === 'connected') {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 ml-2';
+      text.className = 'text-[10px] text-emerald-400/80';
+      text.innerText = 'Connected';
+    } else if (state === 'reconnecting') {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse ml-2';
+      text.className = 'text-[10px] text-amber-400/80';
+      text.innerText = 'Reconnecting...';
+    } else {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 ml-2';
+      text.className = 'text-[10px] text-red-400/80';
+      text.innerText = 'Disconnected';
+    }
+  }
+
+  function updateStatusDisplay(status) {
+    const statusText = document.getElementById('statusText');
+    const statusInd = document.getElementById('statusIndicator');
+
+    if (statusText) statusText.innerText = status;
+
+    if (statusInd) {
+      if (status === 'online') {
+        statusInd.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      } else if (['installing', 'downloading', 'configuring', 'queued'].includes(status)) {
+        statusInd.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
+      } else if (status === 'failed') {
+        statusInd.className = 'w-2 h-2 rounded-full bg-red-500';
+      } else {
+        statusInd.className = 'w-2 h-2 rounded-full bg-neutral-600';
+      }
+    }
+  }
+
+  // Initialize SSE connection
+  connectSSE();
 </script>
 
 <%- include('../layouts/footer', { script: null }) %>

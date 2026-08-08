@@ -122,33 +122,79 @@ export class ServerDashboardController {
 
     const { server } = auth;
     const processMgr = ProcessManager.getInstance();
+    let closed = false;
 
+    // SSE headers — proxy-safe
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    const consoleListener = (logLine: string) => {
-      res.write(`event: log\ndata: ${JSON.stringify({ message: logLine })}\n\n`);
+    // Helper to safely write SSE data with backpressure awareness
+    const sseWrite = (chunk: string): boolean => {
+      if (closed) return false;
+      try {
+        return res.write(chunk);
+      } catch {
+        return false;
+      }
     };
 
+    // Replay missed events if Last-Event-ID is present (SSE reconnection)
+    const lastEventIdHeader = req.headers['last-event-id'] as string | undefined;
+    const lastEventId = lastEventIdHeader ? parseInt(lastEventIdHeader, 10) : 0;
+
+    if (lastEventId > 0) {
+      const missed = processMgr.getEventsSince(server.uuid, lastEventId);
+      for (const evt of missed) {
+        sseWrite(`id: ${evt.id}\nevent: log\ndata: ${JSON.stringify({ id: evt.id, type: evt.type, timestamp: evt.timestamp, message: evt.line })}\n\n`);
+      }
+    }
+
+    // Live console event listener
+    const consoleListener = (evt: any) => {
+      if (closed) return;
+      sseWrite(`id: ${evt.id}\nevent: log\ndata: ${JSON.stringify({ id: evt.id, type: evt.type, timestamp: evt.timestamp, message: evt.line })}\n\n`);
+    };
+
+    // Immediate status event listener
+    const statusListener = (data: any) => {
+      if (closed) return;
+      sseWrite(`event: status\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Progress event listener (installation)
     const progressListener = (progData: any) => {
-      res.write(`event: progress\ndata: ${JSON.stringify(progData)}\n\n`);
+      if (closed) return;
+      sseWrite(`event: progress\ndata: ${JSON.stringify(progData)}\n\n`);
     };
 
     processMgr.on(`console:${server.uuid}`, consoleListener);
+    processMgr.on(`status:${server.uuid}`, statusListener);
     processMgr.on(`progress:${server.uuid}`, progressListener);
 
-    // Send metrics ticker every 3 seconds
-    const interval = setInterval(() => {
+    // Metrics ticker every 3 seconds
+    const metricsInterval = setInterval(() => {
+      if (closed) return;
       const metrics = processMgr.getLiveMetrics(server);
-      res.write(`event: metrics\ndata: ${JSON.stringify(metrics)}\n\n`);
+      sseWrite(`event: metrics\ndata: ${JSON.stringify(metrics)}\n\n`);
     }, 3000);
 
+    // Heartbeat every 15 seconds to keep connection alive through proxies
+    const heartbeatInterval = setInterval(() => {
+      if (closed) return;
+      sseWrite(`: keepalive\n\n`);
+    }, 15000);
+
+    // Cleanup on client disconnect
     req.on('close', () => {
+      closed = true;
       processMgr.off(`console:${server.uuid}`, consoleListener);
+      processMgr.off(`status:${server.uuid}`, statusListener);
       processMgr.off(`progress:${server.uuid}`, progressListener);
-      clearInterval(interval);
+      clearInterval(metricsInterval);
+      clearInterval(heartbeatInterval);
       res.end();
     });
   }
