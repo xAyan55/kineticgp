@@ -4,7 +4,50 @@ import https from 'https';
 import http from 'http';
 import { EventEmitter } from 'events';
 
+export interface ResolvedServerJar {
+  url: string;
+  jarSize?: number;
+  java?: number;
+  buildLabel?: string;
+}
+
+interface McJarsBuildResponse {
+  success: boolean;
+  build?: {
+    id?: number;
+    name?: string;
+    buildNumber?: number;
+    jarUrl?: string | null;
+    jarSize?: number | null;
+    experimental?: boolean;
+  };
+  version?: {
+    id?: string;
+    supported?: boolean;
+    java?: number;
+  };
+}
+
 export class MinecraftJarService extends EventEmitter {
+  // Panel software names -> MCJars server types (https://mcjars.app/api/v2/build)
+  private static readonly MCJARS_TYPE_MAP: Record<string, string> = {
+    paper: 'PAPER',
+    purpur: 'PURPUR',
+    vanilla: 'VANILLA',
+    fabric: 'FABRIC',
+    spigot: 'SPIGOT',
+    folia: 'FOLIA',
+    forge: 'FORGE',
+    neoforge: 'NEOFORGE',
+    quilt: 'QUILT',
+    waterfall: 'WATERFALL',
+    velocity: 'VELOCITY',
+    bungeecord: 'BUNGEECORD',
+    leaves: 'LEAVES',
+    magma: 'MAGMA',
+    mohist: 'MOHIST'
+  };
+
   static getStoragePath(serverUuid: string): string {
     const dir = path.join(process.cwd(), 'storage', 'servers', serverUuid);
     if (!fs.existsSync(dir)) {
@@ -119,66 +162,142 @@ export class MinecraftJarService extends EventEmitter {
     });
   }
 
-  static async resolveDownloadUrl(software: string, version: string, logger?: (msg: string) => void): Promise<string> {
+  static async fetchJsonPost<T>(url: string, body: unknown, headers: Record<string, string> = {}): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const payload = typeof body === 'string' ? body : JSON.stringify(body);
+      const client = url.startsWith('https') ? https : http;
+
+      const req = client.request(url, {
+        method: 'POST',
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+          'Accept': 'application/json',
+          'User-Agent': 'KineticGP/1.0',
+          ...headers
+        }
+      }, (res) => {
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          return this.fetchJsonPost<T>(res.headers.location, body, headers).then(resolve).catch(reject);
+        }
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          if (res.statusCode !== 200) {
+            return reject(new Error(`HTTP ${res.statusCode} from ${url}`));
+          }
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('JSON POST timed out'));
+      });
+      req.on('error', reject);
+      req.end(payload);
+    });
+  }
+
+  /**
+   * Primary resolver: MCJars unified build API. Returns null when the software
+   * type is not tracked by MCJars or the request fails, so callers can fall back.
+   */
+  private static async resolveViaMcJars(
+    software: string,
+    version: string,
+    logger?: (msg: string) => void
+  ): Promise<ResolvedServerJar | null> {
+    const type = this.MCJARS_TYPE_MAP[software.toLowerCase()];
+    if (!type) {
+      if (logger) logger(`[Installer] Software "${software}" is not tracked by MCJars, trying legacy sources...`);
+      return null;
+    }
+
+    const apiUrl = 'https://mcjars.app/api/v2/build';
+    try {
+      if (logger) logger(`[HTTP] POST ${apiUrl} {type: ${type}, versionId: ${version}}`);
+      const res = await this.fetchJsonPost<McJarsBuildResponse>(apiUrl, { type, versionId: version });
+      if (!res || !res.success) {
+        if (logger) logger(`[MCJars] API returned success=false for ${type} ${version}.`);
+        return null;
+      }
+      if (!res.build?.jarUrl) {
+        if (logger) logger(`[MCJars] No downloadable build found for ${type} ${version}.`);
+        return null;
+      }
+      const buildNumber = res.build.buildNumber;
+      const buildLabel = buildNumber !== undefined
+        ? (res.build.name && res.build.name !== `#${buildNumber}` ? `#${buildNumber} (${res.build.name})` : `#${buildNumber}`)
+        : undefined;
+      if (logger) {
+        logger(
+          `[MCJars] Resolved ${type} ${version} build ${buildLabel || ''}${res.version?.java ? ` | requires Java ${res.version.java}` : ''}`
+        );
+      }
+      return {
+        url: res.build.jarUrl,
+        jarSize: res.build.jarSize ?? undefined,
+        java: res.version?.java,
+        buildLabel
+      };
+    } catch (e) {
+      if (logger) logger(`[MCJars] Resolution failed for ${type} ${version}: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
+  static async resolveDownloadUrl(
+    software: string,
+    version: string,
+    logger?: (msg: string) => void
+  ): Promise<ResolvedServerJar> {
     const softLower = software.toLowerCase();
 
-    // 1. PaperMC API
+    // 1. Primary: MCJars unified API (supports Paper, Purpur, Vanilla, Fabric, ...)
+    const mcjars = await this.resolveViaMcJars(software, version, logger);
+    if (mcjars) return mcjars;
+
+    // 2. Legacy fallback: PaperMC fill API v3 (only when Paper was requested)
     if (softLower.includes('paper')) {
-      // Primary: fill.papermc.io v3 (api.papermc.io/v2 was decommissioned, returns HTTP 410)
       try {
-        const fillUri = `https://fill.papermc.io/v3/projects/paper/versions/${version}/builds/latest`;
+        const fillUri = `https://fill.papermc.io/v3/projects/paper/versions/${encodeURIComponent(version)}/builds/latest`;
         if (logger) logger(`[HTTP] GET ${fillUri}`);
         const buildInfo = await this.fetchJson<{
           id: number;
           downloads?: { 'server:default'?: { url?: string } };
         }>(fillUri);
         const url = buildInfo?.downloads?.['server:default']?.url;
-        if (url) return url;
-      } catch (e) {
-        if (logger) logger(`[Installer] PaperMC fill API resolution failed for ${version}, trying legacy API...`);
-      }
-
-      // Fallback: legacy api.papermc.io v2
-      try {
-        const apiUri = `https://api.papermc.io/v2/projects/paper/versions/${version}`;
-        if (logger) logger(`[HTTP] GET ${apiUri}`);
-        const buildInfo = await this.fetchJson<{ builds: number[] }>(apiUri);
-        if (buildInfo && buildInfo.builds && buildInfo.builds.length > 0) {
-          const latestBuild = buildInfo.builds[buildInfo.builds.length - 1];
-          return `https://api.papermc.io/v2/projects/paper/versions/${version}/builds/${latestBuild}/downloads/paper-${version}-${latestBuild}.jar`;
+        if (url) {
+          if (logger) logger(`[Installer] Resolved Paper ${version} via PaperMC fill API.`);
+          return { url };
         }
       } catch (e) {
-        if (logger) logger(`[Installer] PaperMC API resolution failed for ${version}, trying fallback...`);
+        if (logger) logger(`[Installer] PaperMC fill API resolution failed for ${version}.`);
       }
     }
 
-    // 2. PurpurMC API
+    // 3. Legacy fallback: PurpurMC API (only when Purpur was requested)
     if (softLower.includes('purpur')) {
-      const apiUri = `https://purpurmc.org/api/v2/purpur/${version}`;
-      if (logger) logger(`[HTTP] GET ${apiUri}`);
       try {
+        const apiUri = `https://purpurmc.org/api/v2/purpur/${encodeURIComponent(version)}`;
+        if (logger) logger(`[HTTP] GET ${apiUri}`);
         const buildInfo = await this.fetchJson<{ builds: { latest: string } }>(apiUri);
-        if (buildInfo && buildInfo.builds && buildInfo.builds.latest) {
-          return `https://purpurmc.org/api/v2/purpur/${version}/${buildInfo.builds.latest}/download`;
+        if (buildInfo?.builds?.latest) {
+          if (logger) logger(`[Installer] Resolved Purpur ${version} via PurpurMC API.`);
+          return { url: `https://purpurmc.org/api/v2/purpur/${encodeURIComponent(version)}/${buildInfo.builds.latest}/download` };
         }
       } catch (e) {
-        if (logger) logger(`[Installer] Purpur API resolution failed for ${version}, trying fallback...`);
+        if (logger) logger(`[Installer] Purpur API resolution failed for ${version}.`);
       }
     }
 
-    // 3. mcjars.app API (v2 & v1)
-    const mcjarsUri = `https://api.mcjars.app/v2/builds/${software.toLowerCase()}/${version}/latest`;
-    if (logger) logger(`[HTTP] GET ${mcjarsUri}`);
-    try {
-      const jarInfo = await this.fetchJson<{ downloadUrl?: string; url?: string }>(mcjarsUri);
-      if (jarInfo.downloadUrl || jarInfo.url) {
-        return (jarInfo.downloadUrl || jarInfo.url)!;
-      }
-    } catch {
-      // fallback
-    }
-
-    // 4. Mojang Official Vanilla Manifest (ONLY when vanilla was requested)
+    // 4. Legacy fallback: Mojang Official Vanilla Manifest (ONLY when vanilla was requested)
     if (softLower.includes('vanilla')) {
       const mojangUri = 'https://launchermeta.mojang.com/mc/game/version_manifest.json';
       if (logger) logger(`[HTTP] GET ${mojangUri}`);
@@ -188,18 +307,19 @@ export class MinecraftJarService extends EventEmitter {
         if (verObj) {
           const verDetails = await this.fetchJson<{ downloads: { server: { url: string } } }>(verObj.url);
           if (verDetails?.downloads?.server?.url) {
-            return verDetails.downloads.server.url;
+            if (logger) logger(`[Installer] Resolved Vanilla ${version} via Mojang manifest.`);
+            return { url: verDetails.downloads.server.url };
           }
         }
-      } catch {
-        // fallback to throw below
+      } catch (e) {
+        if (logger) logger(`[Installer] Mojang manifest resolution failed for ${version}.`);
       }
     }
 
     // 5. Fail loudly instead of silently installing the wrong software
     throw new Error(
       `Could not resolve a download URL for ${software} ${version}. ` +
-      `The ${software} API may be unreachable from this host or the version may not exist.`
+      `The MCJars API and upstream ${software} sources were unreachable from this host, or the version does not exist for ${software}.`
     );
   }
 }

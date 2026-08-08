@@ -109,9 +109,22 @@ spawn-protection=0
         serverModel_1.ServerModel.updateStatus(server.id, 'downloading');
         this.log(serverUuid, 'Installer', `Fetching ${server.software} ${server.version} metadata...`);
         try {
-            const downloadUrl = await minecraftJarService_1.MinecraftJarService.resolveDownloadUrl(server.software, server.version, (msg) => {
-                this.log(serverUuid, 'HTTP', msg.replace('[HTTP] ', ''));
+            const resolved = await minecraftJarService_1.MinecraftJarService.resolveDownloadUrl(server.software, server.version, (msg) => {
+                this.log(serverUuid, 'Installer', msg.replace('[HTTP] ', ''));
             });
+            const downloadUrl = resolved.url;
+            if (resolved.buildLabel) {
+                this.log(serverUuid, 'Installer', `Resolved ${server.software} ${server.version} build ${resolved.buildLabel}${resolved.java ? ` (requires Java ${resolved.java})` : ''}.`);
+            }
+            // Persist the Java requirement reported by the build source
+            if (resolved.java && server.java_version !== String(resolved.java)) {
+                serverModel_1.ServerModel.updateSettings(server.id, { java_version: String(resolved.java) });
+                const fresh = serverModel_1.ServerModel.findByUuid(serverUuid);
+                if (fresh) {
+                    serverJson.java_version = fresh.java_version;
+                    fs_1.default.writeFileSync(path_1.default.join(targetDir, 'server.json'), JSON.stringify(serverJson, null, 2));
+                }
+            }
             this.log(serverUuid, 'Installer', `Downloading server.jar from ${downloadUrl}...`);
             const jarPath = path_1.default.join(targetDir, 'server.jar');
             let lastPercent = -1;

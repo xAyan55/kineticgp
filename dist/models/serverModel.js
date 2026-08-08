@@ -178,10 +178,10 @@ class ServerModel {
             return false;
         const stmt = database_1.db.prepare(`
       UPDATE servers 
-      SET name = ?, description = ?, ram_limit = ?, version = ?, software = ?, startup_command = ?, auto_restart = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, description = ?, ram_limit = ?, version = ?, software = ?, startup_command = ?, auto_restart = ?, java_version = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
-        const result = stmt.run(data.name !== undefined ? data.name : server.name, data.description !== undefined ? data.description : server.description, data.ram_limit !== undefined ? data.ram_limit : server.ram_limit, data.version !== undefined ? data.version : server.version, data.software !== undefined ? data.software : server.software, data.startup_command !== undefined ? data.startup_command : server.startup_command, data.auto_restart !== undefined ? data.auto_restart : server.auto_restart, id);
+        const result = stmt.run(data.name !== undefined ? data.name : server.name, data.description !== undefined ? data.description : server.description, data.ram_limit !== undefined ? data.ram_limit : server.ram_limit, data.version !== undefined ? data.version : server.version, data.software !== undefined ? data.software : server.software, data.startup_command !== undefined ? data.startup_command : server.startup_command, data.auto_restart !== undefined ? data.auto_restart : server.auto_restart, data.java_version !== undefined ? data.java_version : server.java_version, id);
         return result.changes > 0;
     }
     static updateOwner(id, newUserId) {

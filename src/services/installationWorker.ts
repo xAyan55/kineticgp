@@ -115,9 +115,25 @@ spawn-protection=0
     this.log(serverUuid, 'Installer', `Fetching ${server.software} ${server.version} metadata...`);
 
     try {
-      const downloadUrl = await MinecraftJarService.resolveDownloadUrl(server.software, server.version, (msg) => {
-        this.log(serverUuid, 'HTTP', msg.replace('[HTTP] ', ''));
+      const resolved = await MinecraftJarService.resolveDownloadUrl(server.software, server.version, (msg) => {
+        this.log(serverUuid, 'Installer', msg.replace('[HTTP] ', ''));
       });
+
+      const downloadUrl = resolved.url;
+
+      if (resolved.buildLabel) {
+        this.log(serverUuid, 'Installer', `Resolved ${server.software} ${server.version} build ${resolved.buildLabel}${resolved.java ? ` (requires Java ${resolved.java})` : ''}.`);
+      }
+
+      // Persist the Java requirement reported by the build source
+      if (resolved.java && server.java_version !== String(resolved.java)) {
+        ServerModel.updateSettings(server.id, { java_version: String(resolved.java) });
+        const fresh = ServerModel.findByUuid(serverUuid);
+        if (fresh) {
+          serverJson.java_version = fresh.java_version;
+          fs.writeFileSync(path.join(targetDir, 'server.json'), JSON.stringify(serverJson, null, 2));
+        }
+      }
 
       this.log(serverUuid, 'Installer', `Downloading server.jar from ${downloadUrl}...`);
 
