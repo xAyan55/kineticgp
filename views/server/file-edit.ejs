@@ -1,46 +1,496 @@
 <%- include('../layouts/header', { title: title }) %>
 
+<!-- CodeMirror 5 Self-Hosted Styles -->
+<link rel="stylesheet" href="/vendor/codemirror/codemirror.css">
+<link rel="stylesheet" href="/vendor/codemirror/addon/dialog/dialog.css">
+
+<style>
+  /* Custom KineticGP Dark Theme for CodeMirror */
+  .CodeMirror {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 13px;
+    height: 100%;
+    background-color: #0a0b0c !important;
+    color: #e5e7eb !important;
+    border-radius: 0.75rem;
+    line-height: 1.6;
+  }
+  .CodeMirror-gutters {
+    background-color: #101213 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  .CodeMirror-linenumber {
+    color: #525252 !important;
+  }
+  .CodeMirror-cursor {
+    border-left: 2px solid #1873d3 !important;
+  }
+  .CodeMirror-selected {
+    background: rgba(24, 115, 211, 0.35) !important;
+  }
+  .CodeMirror-focused .CodeMirror-selected {
+    background: rgba(24, 115, 211, 0.45) !important;
+  }
+  .CodeMirror-activeline-background {
+    background: rgba(255, 255, 255, 0.03) !important;
+  }
+
+  /* CodeMirror Dialog & Search Bar Styling */
+  .CodeMirror-dialog {
+    background-color: #101213 !important;
+    color: #e5e7eb !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 8px 16px !important;
+    font-family: ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 12px !important;
+  }
+  .CodeMirror-dialog input {
+    background-color: #0a0b0c !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    outline: none !important;
+  }
+  .CodeMirror-dialog button {
+    background-color: #1873d3 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 2px 10px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    margin-left: 4px !important;
+  }
+
+  /* CodeMirror Syntax Tokens */
+  .cm-keyword { color: #f472b6 !important; font-weight: 600; }
+  .cm-atom { color: #c084fc !important; }
+  .cm-number { color: #fbbf24 !important; }
+  .cm-def { color: #60a5fa !important; }
+  .cm-variable { color: #e5e7eb !important; }
+  .cm-property { color: #38bdf8 !important; font-weight: 500; }
+  .cm-operator { color: #f43f5e !important; }
+  .cm-comment { color: #6b7280 !important; font-style: italic; }
+  .cm-string { color: #4ade80 !important; }
+  .cm-string-2 { color: #a3e635 !important; }
+  .cm-meta { color: #94a3b8 !important; }
+  .cm-error { color: #f87171 !important; background: rgba(239, 68, 68, 0.15) !important; }
+</style>
+
 <div class="min-h-screen bg-[#101213] flex flex-col lg:flex-row">
   <%- include('../components/sidebar') %>
 
   <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
     <!-- Top Bar / Breadcrumb Navigation -->
     <header class="h-16 px-6 lg:px-10 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
-      <div class="flex items-center gap-2 text-sm text-neutral-400">
+      <div class="flex items-center gap-2 text-sm text-neutral-400 overflow-x-auto py-2">
         <span class="text-white font-medium">Servers</span>
         <span>/</span>
         <span class="text-[#1873d3] font-medium"><%= server.name %></span>
         <span>/</span>
         <a href="/dashboard/server/<%= server.uuid %>/files" class="text-neutral-400 hover:text-white">Files</a>
-        <span>/</span>
-        <span class="text-white font-mono"><%= filename %></span>
+        <% if (filePath) { %>
+          <% const parts = filePath.split('/').filter(Boolean); %>
+          <% let acc = ''; %>
+          <% parts.forEach(function(part, index) { %>
+            <% acc += '/' + part; %>
+            <span>/</span>
+            <% if (index === parts.length - 1) { %>
+              <span class="text-white font-mono font-semibold"><%= part %></span>
+            <% } else { %>
+              <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(acc) %>" class="text-neutral-400 hover:text-white font-mono"><%= part %></a>
+            <% } %>
+          <% }); %>
+        <% } %>
       </div>
 
-      <div class="flex items-center gap-2">
-        <a href="/dashboard/server/<%= server.uuid %>/files" class="btn-secondary text-xs">Back to Files</a>
-        <button form="editFileForm" type="submit" class="btn-primary text-xs flex items-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      <div class="flex items-center gap-3">
+        <!-- Dynamic Unsaved Status Indicator -->
+        <span id="saveStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 transition">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          ● Saved
+        </span>
+
+        <button type="button" onclick="confirmCancel()" class="btn-secondary text-xs">Cancel</button>
+        
+        <button id="saveBtn" type="button" onclick="performSave()" <%= (!isText || isTooLarge) ? 'disabled' : '' %> class="btn-primary text-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
           Save File
         </button>
       </div>
     </header>
 
-    <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-6 flex-1 flex flex-col">
-      <form id="editFileForm" method="POST" action="/dashboard/server/<%= server.uuid %>/files/save" class="flex-1 flex flex-col space-y-4">
-        <input type="hidden" name="_csrf" value="<%= _csrf %>">
-        <input type="hidden" name="filePath" value="<%= filePath %>">
+    <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-4 flex-1 flex flex-col">
+      
+      <!-- Toast Message Banner -->
+      <div id="toastBanner" class="hidden p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between transition">
+        <span id="toastText"></span>
+        <button onclick="hideToast()" class="text-current opacity-70 hover:opacity-100">&times;</button>
+      </div>
 
-        <div class="kgp-card p-4 sm:p-6 flex-1 flex flex-col space-y-3 bg-[#0d0e0f] border-white/10">
-          <div class="flex items-center justify-between border-b border-white/5 pb-3 text-xs">
-            <span class="font-mono text-neutral-400">Editing: <%= filePath %></span>
-            <span class="text-neutral-500 font-mono">UTF-8</span>
+      <% if (!isText) { %>
+        <!-- BINARY FILE GUARD -->
+        <div class="kgp-card p-10 text-center space-y-4 border-white/10 my-auto">
+          <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">Binary File Unsupported</h3>
+          <p class="text-sm text-neutral-400 max-w-md mx-auto">This file cannot be edited in the browser text editor. You can download the file directly to view or edit it locally.</p>
+          <div class="pt-2">
+            <a href="/dashboard/server/<%= server.uuid %>/files/download?path=<%= encodeURIComponent(filePath) %>" class="btn-primary text-xs inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download File (<%= (size / 1024).toFixed(1) %> KB)
+            </a>
+          </div>
+        </div>
+      <% } else if (isTooLarge) { %>
+        <!-- FILE TOO LARGE GUARD -->
+        <div class="kgp-card p-10 text-center space-y-4 border-white/10 my-auto">
+          <div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto border border-red-500/20">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">File Too Large to Edit</h3>
+          <p class="text-sm text-neutral-400 max-w-md mx-auto">This file exceeds the maximum 2 MB browser editor limit. Download the file to edit locally.</p>
+          <div class="pt-2">
+            <a href="/dashboard/server/<%= server.uuid %>/files/download?path=<%= encodeURIComponent(filePath) %>" class="btn-primary text-xs inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download Large File (<%= (size / (1024 * 1024)).toFixed(2) %> MB)
+            </a>
+          </div>
+        </div>
+      <% } else { %>
+
+        <!-- TOOLBAR & EDITOR CARD -->
+        <div class="kgp-card p-4 sm:p-5 flex-1 flex flex-col space-y-3 bg-[#0d0e0f] border-white/10 min-h-[550px]">
+          
+          <!-- Editor Toolbar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3 text-xs">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="font-mono text-neutral-300 font-medium">Path: <span class="text-neutral-400"><%= filePath %></span></span>
+              <span class="px-2 py-0.5 rounded bg-white/5 text-neutral-400 font-mono text-[11px] uppercase border border-white/5"><%= mode %></span>
+              <span class="text-neutral-500 font-mono"><%= (size / 1024).toFixed(1) %> KB</span>
+            </div>
+
+            <!-- Toolbar Controls -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="triggerFind()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 text-xs transition flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Find (Ctrl+F)
+              </button>
+
+              <button type="button" onclick="triggerReplace()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 text-xs transition flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                Replace (Ctrl+H)
+              </button>
+
+              <button id="wrapBtn" type="button" onclick="toggleWordWrap()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 text-xs transition">
+                Wrap: OFF
+              </button>
+
+              <select id="indentSelect" onchange="changeIndent(this.value)" class="px-2.5 py-1 rounded-lg bg-[#101213] border border-white/10 text-neutral-300 text-xs outline-none">
+                <option value="2">2 Spaces</option>
+                <option value="4" selected>4 Spaces</option>
+              </select>
+
+              <select id="fontSelect" onchange="changeFontSize(this.value)" class="px-2.5 py-1 rounded-lg bg-[#101213] border border-white/10 text-neutral-300 text-xs outline-none">
+                <option value="12">12px</option>
+                <option value="13" selected>13px</option>
+                <option value="15">15px</option>
+                <option value="17">17px</option>
+              </select>
+            </div>
           </div>
 
-          <textarea name="content" rows="24" class="flex-1 w-full p-4 rounded-xl bg-[#0a0b0c] border border-white/5 font-mono text-xs text-neutral-200 focus:outline-none focus:border-[#1873d3] leading-relaxed custom-scrollbar"><%= content %></textarea>
+          <!-- CodeMirror Editor Container -->
+          <div class="flex-1 w-full relative min-h-[480px]">
+            <textarea id="codeTextarea" class="hidden"><%= content %></textarea>
+          </div>
+
+          <!-- Bottom Footer Bar -->
+          <div class="flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-white/5">
+            <div class="flex items-center gap-4">
+              <span>Lines: <strong id="lineCount" class="text-neutral-400 font-mono">0</strong></span>
+              <span>Encoding: <strong class="text-neutral-400 font-mono">UTF-8</strong></span>
+            </div>
+            <div class="flex items-center gap-3 font-mono text-neutral-500">
+              <span>Ctrl + S : Save</span>
+              <span>•</span>
+              <span>Ctrl + F : Find</span>
+              <span>•</span>
+              <span>Ctrl + H : Replace</span>
+            </div>
+          </div>
+
         </div>
-      </form>
+
+      <% } %>
     </div>
   </main>
 </div>
+
+<!-- CONFLICT RESOLUTION MODAL (409) -->
+<div id="conflictModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-amber-500/30">
+    <div class="flex items-center gap-3 text-amber-400 border-b border-white/5 pb-3">
+      <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <h3 class="text-base font-bold text-white">File Modified Externally</h3>
+    </div>
+    <p class="text-xs text-neutral-300 leading-relaxed">This file was changed on disk by Minecraft or another process since you opened it. Choose how to resolve this conflict:</p>
+    <div class="flex justify-end gap-2 pt-2 border-t border-white/5">
+      <button type="button" onclick="reloadLatestContent()" class="btn-secondary text-xs">Reload File</button>
+      <button type="button" onclick="performSave(true)" class="btn-primary text-xs bg-amber-600 hover:bg-amber-500">Overwrite My Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNSAVED CONFIRMATION MODAL -->
+<div id="cancelModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-white/10">
+    <div class="flex items-center gap-3 text-white border-b border-white/5 pb-3">
+      <h3 class="text-base font-bold">Unsaved Changes</h3>
+    </div>
+    <p class="text-xs text-neutral-300 leading-relaxed">You have unsaved changes in this file. Discarding will lose all your modifications.</p>
+    <div class="flex justify-end gap-2 pt-2 border-t border-white/5">
+      <button type="button" onclick="closeCancelModal()" class="btn-secondary text-xs">Keep Editing</button>
+      <button type="button" onclick="discardAndLeave()" class="btn-primary text-xs bg-red-600 hover:bg-red-500">Discard Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Self-Hosted CodeMirror Core & Addons -->
+<script src="/vendor/codemirror/codemirror.js"></script>
+<script src="/vendor/codemirror/addon/dialog/dialog.js"></script>
+<script src="/vendor/codemirror/addon/search/searchcursor.js"></script>
+<script src="/vendor/codemirror/addon/search/search.js"></script>
+<script src="/vendor/codemirror/mode/yaml/yaml.js"></script>
+<script src="/vendor/codemirror/mode/javascript/javascript.js"></script>
+<script src="/vendor/codemirror/mode/properties/properties.js"></script>
+<script src="/vendor/codemirror/mode/toml/toml.js"></script>
+<script src="/vendor/codemirror/mode/shell/shell.js"></script>
+<script src="/vendor/codemirror/mode/xml/xml.js"></script>
+
+<script>
+  let editor = null;
+  let isDirty = false;
+  let currentMtimeMs = <%= mtimeMs || 0 %>;
+  const filePath = "<%= filePath %>";
+  const serverUuid = "<%= server.uuid %>";
+  const csrfToken = "<%= _csrf %>";
+  const languageMode = "<%= mode || 'text/plain' %>";
+  const isEditable = <%= (isText && !isTooLarge) ? 'true' : 'false' %>;
+
+  if (isEditable && document.getElementById('codeTextarea')) {
+    editor = CodeMirror.fromTextArea(document.getElementById('codeTextarea'), {
+      lineNumbers: true,
+      mode: languageMode,
+      theme: 'default',
+      indentUnit: 4,
+      tabSize: 4,
+      lineWrapping: false,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      viewportMargin: Infinity,
+      extraKeys: {
+        "Ctrl-S": function(cm) { performSave(); },
+        "Cmd-S": function(cm) { performSave(); },
+        "Ctrl-F": "findPersistent",
+        "Cmd-F": "findPersistent",
+        "Ctrl-H": "replace",
+        "Cmd-H": "replace"
+      }
+    });
+
+    document.getElementById('lineCount').innerText = editor.lineCount();
+
+    editor.on('change', function() {
+      if (!isDirty) {
+        setDirtyState(true);
+      }
+      document.getElementById('lineCount').innerText = editor.lineCount();
+    });
+  }
+
+  function setDirtyState(dirty) {
+    isDirty = dirty;
+    const badge = document.getElementById('saveStatusBadge');
+    if (!badge) return;
+
+    if (dirty) {
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 transition';
+      badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>● Unsaved changes';
+    } else {
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 transition';
+      badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>● Saved';
+    }
+  }
+
+  function setSavingState() {
+    const badge = document.getElementById('saveStatusBadge');
+    if (!badge) return;
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1.5 transition';
+    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-blue-400 animate-spin"></span>● Saving...';
+  }
+
+  function setSaveErrorState(msg) {
+    const badge = document.getElementById('saveStatusBadge');
+    if (!badge) return;
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 flex items-center gap-1.5 transition';
+    badge.innerHTML = '✕ Save failed';
+    showToast(msg || 'Failed to save file.', 'red');
+  }
+
+  async function performSave(forceOverwrite = false) {
+    if (!editor || !isEditable) return;
+
+    setSavingState();
+    const content = editor.getValue();
+
+    const payload = {
+      _csrf: csrfToken,
+      filePath: filePath,
+      content: content,
+      expectedMtimeMs: forceOverwrite ? undefined : currentMtimeMs
+    };
+
+    try {
+      const res = await fetch('/dashboard/server/' + serverUuid + '/files/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.status === 409) {
+        setSaveErrorState('Conflict: File was modified externally.');
+        document.getElementById('conflictModal').classList.remove('hidden');
+        return;
+      }
+
+      if (!res.ok || !data.success) {
+        setSaveErrorState(data.message || data.error || 'Save failed');
+        return;
+      }
+
+      // Success
+      if (data.mtimeMs) {
+        currentMtimeMs = data.mtimeMs;
+      }
+      setDirtyState(false);
+      closeConflictModal();
+      showToast('File saved successfully!', 'emerald');
+
+    } catch (err) {
+      console.error('Save network error:', err);
+      setSaveErrorState('Network error while saving file.');
+    }
+  }
+
+  async function reloadLatestContent() {
+    closeConflictModal();
+    try {
+      const res = await fetch('/dashboard/server/' + serverUuid + '/files/content?path=' + encodeURIComponent(filePath), {
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.success && editor) {
+        editor.setValue(data.content || '');
+        currentMtimeMs = data.mtimeMs;
+        setDirtyState(false);
+        showToast('Reloaded latest content from disk.', 'emerald');
+      } else {
+        showToast('Failed to reload file content.', 'red');
+      }
+    } catch (e) {
+      showToast('Network error while reloading content.', 'red');
+    }
+  }
+
+  function toggleWordWrap() {
+    if (!editor) return;
+    const current = editor.getOption('lineWrapping');
+    editor.setOption('lineWrapping', !current);
+    document.getElementById('wrapBtn').innerText = !current ? 'Wrap: ON' : 'Wrap: OFF';
+  }
+
+  function changeIndent(val) {
+    if (!editor) return;
+    const num = parseInt(val, 10);
+    editor.setOption('indentUnit', num);
+    editor.setOption('tabSize', num);
+  }
+
+  function changeFontSize(val) {
+    if (!editor) return;
+    const wrapper = editor.getWrapperElement();
+    wrapper.style.fontSize = val + 'px';
+    editor.refresh();
+  }
+
+  function triggerFind() {
+    if (editor) CodeMirror.commands.findPersistent(editor);
+  }
+
+  function triggerReplace() {
+    if (editor) CodeMirror.commands.replace(editor);
+  }
+
+  function confirmCancel() {
+    if (isDirty) {
+      document.getElementById('cancelModal').classList.remove('hidden');
+    } else {
+      discardAndLeave();
+    }
+  }
+
+  function closeCancelModal() {
+    document.getElementById('cancelModal').classList.add('hidden');
+  }
+
+  function closeConflictModal() {
+    document.getElementById('conflictModal').classList.add('hidden');
+  }
+
+  function discardAndLeave() {
+    window.onbeforeunload = null;
+    const parts = filePath.split('/').filter(Boolean);
+    parts.pop();
+    const parentPath = '/' + parts.join('/');
+    window.location.href = '/dashboard/server/' + serverUuid + '/files?path=' + encodeURIComponent(parentPath);
+  }
+
+  function showToast(msg, color = 'emerald') {
+    const banner = document.getElementById('toastBanner');
+    const text = document.getElementById('toastText');
+    if (!banner || !text) return;
+
+    text.innerText = msg;
+    if (color === 'emerald') {
+      banner.className = 'p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+    } else if (color === 'red') {
+      banner.className = 'p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between bg-red-500/10 text-red-400 border-red-500/30';
+    }
+    banner.classList.remove('hidden');
+    setTimeout(() => { banner.classList.add('hidden'); }, 5000);
+  }
+
+  function hideToast() {
+    const banner = document.getElementById('toastBanner');
+    if (banner) banner.classList.add('hidden');
+  }
+
+  window.addEventListener('beforeunload', function(e) {
+    if (isDirty) {
+      e.preventDefault();
+      e.returnValue = 'You have unsaved changes.';
+      return 'You have unsaved changes.';
+    }
+  });
+</script>
 
 <%- include('../layouts/footer', { script: null }) %>

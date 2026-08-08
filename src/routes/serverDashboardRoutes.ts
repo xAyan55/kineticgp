@@ -18,6 +18,7 @@ router.post('/:uuid/command', ServerDashboardController.postSendCommand);
 // Web File Manager
 router.get('/:uuid/files', ServerDashboardController.getFiles);
 router.get('/:uuid/files/edit', ServerDashboardController.getEditFile);
+router.get('/:uuid/files/content', ServerDashboardController.getFileContent);
 router.post('/:uuid/files/save', ServerDashboardController.postSaveFile);
 router.post('/:uuid/files/create', ServerDashboardController.postCreateItem);
 router.post('/:uuid/files/rename', ServerDashboardController.postRenameItem);

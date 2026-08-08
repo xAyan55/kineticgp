@@ -224,7 +224,23 @@ class ServerDashboardController {
             err: req.query.err || null
         });
     }
-    // Read File for Editor
+    // Detailed JSON endpoint for File Content API
+    static getFileContent(req, res) {
+        const auth = ServerDashboardController.authorizeServerAccess(req, res);
+        if (!auth)
+            return;
+        const { server } = auth;
+        const filePath = String(req.query.path || '');
+        try {
+            const detail = fileManagerService_1.FileManagerService.readFileDetailed(server, filePath);
+            res.json({ success: true, ...detail });
+        }
+        catch (e) {
+            const status = e.statusCode || 500;
+            res.status(status).json({ success: false, error: e.message || 'FAILED_TO_READ_FILE' });
+        }
+    }
+    // Read File for Editor Page
     static getEditFile(req, res) {
         const auth = ServerDashboardController.authorizeServerAccess(req, res);
         if (!auth)
@@ -233,42 +249,67 @@ class ServerDashboardController {
         const filePath = String(req.query.path || '');
         const settings = settingModel_1.SettingModel.getAll();
         try {
-            const content = fileManagerService_1.FileManagerService.readFile(server, filePath);
-            const filename = path_1.default.basename(filePath);
+            const detail = fileManagerService_1.FileManagerService.readFileDetailed(server, filePath);
             res.render('server/file-edit', {
-                title: `Editing ${filename} — ${server.name}`,
+                title: `Editing ${detail.filename} — ${server.name}`,
                 user,
                 server,
                 filePath,
-                filename,
-                content,
+                filename: detail.filename,
+                content: detail.content,
+                mtimeMs: detail.mtimeMs,
+                size: detail.size,
+                isText: detail.isText,
+                isTooLarge: detail.isTooLarge,
+                mode: detail.mode,
                 settings,
                 msg: req.query.msg || null,
                 err: req.query.err || null
             });
         }
         catch (e) {
+            const status = e.statusCode || 500;
+            if (req.xhr || req.headers.accept?.includes('json')) {
+                res.status(status).json({ success: false, error: e.message });
+                return;
+            }
             res.redirect(`/dashboard/server/${server.uuid}/files?err=${encodeURIComponent(e.message)}`);
         }
     }
-    // Save File Content
+    // Atomic Save File Content
     static postSaveFile(req, res) {
         const auth = ServerDashboardController.authorizeServerAccess(req, res);
         if (!auth)
             return;
         const { user, server } = auth;
-        const { filePath, content } = req.body;
+        const { filePath, content, expectedMtimeMs } = req.body;
+        const isJson = req.xhr || req.headers.accept?.includes('json') || req.headers['x-requested-with'] === 'XMLHttpRequest';
         try {
-            fileManagerService_1.FileManagerService.saveFile(server, String(filePath), String(content));
-            activityModel_1.ActivityModel.log(user.id, user.username, 'FILE_SAVE', `Saved file "${filePath}" on server "${server.name}"`, req.ip || '127.0.0.1');
-            if (req.xhr || req.headers.accept?.includes('json')) {
-                res.json({ success: true });
+            const result = fileManagerService_1.FileManagerService.saveFileAtomic(server, String(filePath || ''), String(content || ''), expectedMtimeMs ? Number(expectedMtimeMs) : undefined);
+            activityModel_1.ActivityModel.log(user.id, user.username, 'FILE_EDIT', `Saved file "${filePath}" (${result.size} bytes) on server "${server.name}"`, req.ip || '127.0.0.1');
+            if (isJson) {
+                res.json({
+                    success: true,
+                    message: 'File saved successfully.',
+                    mtimeMs: result.mtimeMs,
+                    size: result.size
+                });
                 return;
             }
-            res.redirect(`/dashboard/server/${server.uuid}/files?path=${encodeURIComponent(path_1.default.dirname(filePath))}&msg=file_saved`);
+            res.redirect(`/dashboard/server/${server.uuid}/files/edit?path=${encodeURIComponent(filePath)}&msg=file_saved`);
         }
         catch (e) {
-            res.redirect(`/dashboard/server/${server.uuid}/files?err=${encodeURIComponent(e.message)}`);
+            const status = e.statusCode || 500;
+            if (isJson) {
+                res.status(status).json({
+                    success: false,
+                    error: e.name || 'SAVE_FAILED',
+                    message: e.message,
+                    currentMtimeMs: e.currentMtimeMs || null
+                });
+                return;
+            }
+            res.redirect(`/dashboard/server/${server.uuid}/files/edit?path=${encodeURIComponent(filePath)}&err=${encodeURIComponent(e.message)}`);
         }
     }
     // Create Folder / File
