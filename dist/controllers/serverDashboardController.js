@@ -246,11 +246,11 @@ class ServerDashboardController {
         const command = String(req.body.command || '');
         const processMgr = processManager_1.ProcessManager.getInstance();
         const ok = processMgr.sendCommand(server, command);
-        if (req.xhr || req.headers.accept?.includes('json')) {
-            res.json({ success: ok });
+        if (!ok) {
+            res.json({ success: false, message: 'Command failed to send. Server may be offline or still starting.' });
             return;
         }
-        res.redirect(`/dashboard/server/${server.uuid}/console`);
+        res.json({ success: true, message: 'Command sent.' });
     }
     // ── Files Page ─────────────────────────────────────────────────────
     static getFiles(req, res) {

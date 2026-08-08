@@ -1,9 +1,9 @@
 <%- include('../layouts/header', { title: title }) %>
 
-<div class="min-h-screen bg-[#101213] flex flex-col lg:flex-row">
+<div class="h-screen bg-[#101213] flex flex-col lg:flex-row overflow-hidden">
   <%- include('../components/sidebar') %>
 
-  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 flex flex-col overflow-hidden">
     <!-- Top Bar / Breadcrumb Navigation -->
     <header class="h-14 px-4 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
       <div class="flex items-center gap-2 text-sm text-neutral-400">
@@ -55,7 +55,7 @@
       </div>
     </header>
 
-    <div class="px-4 lg:px-8 py-4 max-w-[1600px] w-full mx-auto flex-1 flex flex-col gap-3">
+    <div class="px-4 lg:px-8 py-3 max-w-[1600px] w-full mx-auto flex-1 flex flex-col gap-2 overflow-hidden">
 
       <!-- LIVE INSTALLER PROGRESS (Only if Installing) -->
       <div id="installerSection" class="kgp-card p-5 border-purple-500/20 bg-purple-500/[0.02] <%= ['installing', 'downloading', 'configuring', 'queued'].includes(server.status) ? '' : 'hidden' %>">
@@ -115,7 +115,7 @@
       </div>
 
       <!-- CONSOLE TERMINAL CARD -->
-      <div class="bg-[#0d0e0f] rounded-xl border border-white/[0.06] flex flex-col flex-1 min-h-0" style="min-height: 60vh;">
+      <div class="bg-[#0d0e0f] rounded-xl border border-white/[0.06] flex flex-col flex-1 min-h-0 overflow-hidden">
 
         <!-- Terminal Header -->
         <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 flex-shrink-0">
@@ -376,9 +376,12 @@
 
     fetch(`/dashboard/server/${SERVER_UUID}/command`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': CSRF_TOKEN },
       body: JSON.stringify({ command: cmd, _csrf: CSRF_TOKEN })
-    }).then(res => res.json()).then(data => {
+    }).then(res => {
+      if (!res.ok) return res.json().catch(() => ({ success: false, message: 'Request failed (HTTP ' + res.status + ').' }));
+      return res.json();
+    }).then(data => {
       if (!data.success) {
         appendConsoleLine('[System] Failed to send command: ' + (data.message || 'Server may be offline.'), 'system');
       }
