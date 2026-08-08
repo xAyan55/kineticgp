@@ -240,9 +240,61 @@
 
   scrollToBottom();
 
+  // Dynamic Power Buttons UI State Synchronizer
+  function updatePowerButtonsState(status) {
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const killBtn = document.getElementById('killBtn');
+
+    if (!startBtn || !restartBtn || !stopBtn || !killBtn) return;
+
+    if (status === 'online') {
+      startBtn.disabled = true;
+      startBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
+
+      restartBtn.disabled = false;
+      restartBtn.className = 'py-1.5 px-3.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-xs transition flex items-center gap-1.5';
+
+      stopBtn.disabled = false;
+      stopBtn.className = 'py-1.5 px-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1.5';
+
+      killBtn.disabled = false;
+      killBtn.className = 'py-1.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+    } else if (status === 'starting' || status === 'stopping') {
+      startBtn.disabled = true;
+      startBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
+
+      restartBtn.disabled = true;
+      restartBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
+
+      stopBtn.disabled = true;
+      stopBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
+
+      killBtn.disabled = false;
+      killBtn.className = 'py-1.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+    } else { // offline / failed
+      startBtn.disabled = false;
+      startBtn.className = 'py-1.5 px-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition flex items-center gap-1.5';
+
+      restartBtn.disabled = true;
+      restartBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
+
+      stopBtn.disabled = true;
+      stopBtn.className = 'py-1.5 px-3.5 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition flex items-center gap-1.5';
+
+      killBtn.disabled = true;
+      killBtn.className = 'py-1.5 px-3 rounded-xl bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition';
+    }
+  }
+
   // Async Power Action Handler
   async function sendPowerAction(e, action) {
     if (e) e.preventDefault();
+
+    if (action === 'start') updatePowerButtonsState('starting');
+    else if (action === 'stop') updatePowerButtonsState('stopping');
+
     try {
       const res = await fetch('/dashboard/server/<%= server.uuid %>/power', {
         method: 'POST',
@@ -254,6 +306,9 @@
         body: JSON.stringify({ action: action, _csrf: '<%= _csrf %>' })
       });
       const data = await res.json();
+      if (data.status) {
+        updatePowerButtonsState(data.status);
+      }
       if (!data.success) {
         const line = document.createElement('div');
         line.className = 'leading-relaxed text-amber-400 font-bold px-1 rounded';
@@ -338,6 +393,8 @@
 
       statusText.innerText = m.status;
       if (badge) badge.innerText = m.status;
+
+      updatePowerButtonsState(m.status);
 
       if (m.status === 'online') {
         statusInd.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';

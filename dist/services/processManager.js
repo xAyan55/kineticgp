@@ -15,6 +15,7 @@ class ProcessManager extends events_1.EventEmitter {
     activeProcesses = new Map();
     consoleLogsBuffer = new Map();
     serverIdCache = new Map();
+    stopTimers = new Map();
     logQueue = [];
     logTimer = null;
     constructor() {
@@ -95,7 +96,6 @@ class ProcessManager extends events_1.EventEmitter {
         if (this.consoleLogsBuffer.has(serverUuid)) {
             return this.consoleLogsBuffer.get(serverUuid);
         }
-        // Fallback: read from database
         try {
             const serverId = this.getServerId(serverUuid);
             if (serverId) {
@@ -108,16 +108,47 @@ class ProcessManager extends events_1.EventEmitter {
         catch { }
         return [];
     }
+    isPidAlive(pid) {
+        if (!pid || pid <= 0)
+            return false;
+        try {
+            process.kill(pid, 0);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
     isProcessRunning(serverUuid) {
         const proc = this.activeProcesses.get(serverUuid);
-        return !!(proc && !proc.killed && proc.pid);
+        if (proc && proc.pid && !proc.killed && this.isPidAlive(proc.pid)) {
+            return true;
+        }
+        // Fallback: Check PID stored in database (e.g. after Node restart)
+        try {
+            const server = serverModel_1.ServerModel.findByUuid(serverUuid);
+            if (server && server.pid && this.isPidAlive(server.pid)) {
+                if (server.status === 'online' || server.status === 'starting' || server.status === 'stopping') {
+                    return true;
+                }
+            }
+        }
+        catch { }
+        return false;
     }
     getTimeStamp() {
         const d = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
         return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
+    clearStopTimer(serverUuid) {
+        if (this.stopTimers.has(serverUuid)) {
+            clearTimeout(this.stopTimers.get(serverUuid));
+            this.stopTimers.delete(serverUuid);
+        }
+    }
     startServer(server) {
+        this.clearStopTimer(server.uuid);
         if (this.isProcessRunning(server.uuid)) {
             this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process is already active.`);
             return false;
@@ -127,6 +158,7 @@ class ProcessManager extends events_1.EventEmitter {
         if (!fs_1.default.existsSync(jarPath)) {
             this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Jar file not found at ${jarPath}. Reinstall server jar.`);
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
+            this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
         }
         // Build startup arguments with safety limits
@@ -153,6 +185,7 @@ class ProcessManager extends events_1.EventEmitter {
         catch (e) {
             this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Launch failed: ${e.message}`);
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
+            this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
         }
         // Protect all child streams against unhandled error events
@@ -165,14 +198,13 @@ class ProcessManager extends events_1.EventEmitter {
         child.stderr?.on('error', (err) => {
             console.warn(`[ProcessManager] stderr stream error (${server.uuid}):`, err.message);
         });
-        // Attach process error handler
         child.on('error', (err) => {
+            this.clearStopTimer(server.uuid);
             this.activeProcesses.delete(server.uuid);
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
             this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             if (err.code === 'ENOENT') {
                 this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] ❌ Java runtime binary ("java") was not found on the host system.`);
-                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Please install OpenJDK on your server host: "sudo apt update && sudo apt install -y default-jre"`);
             }
             else {
                 this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Process launch error: ${err.message}`);
@@ -181,6 +213,7 @@ class ProcessManager extends events_1.EventEmitter {
         if (!child.pid) {
             this.logOutput(server.uuid, `[${this.getTimeStamp()}] [ERROR] Failed to obtain Java process PID.`);
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
+            this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
         }
         this.activeProcesses.set(server.uuid, child);
@@ -202,6 +235,7 @@ class ProcessManager extends events_1.EventEmitter {
             }
         });
         child.on('close', (code) => {
+            this.clearStopTimer(server.uuid);
             this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Java process terminated with exit code: ${code}`);
             this.activeProcesses.delete(server.uuid);
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
@@ -211,47 +245,103 @@ class ProcessManager extends events_1.EventEmitter {
         return true;
     }
     stopServer(server) {
+        this.clearStopTimer(server.uuid);
         const child = this.activeProcesses.get(server.uuid);
-        if (!child || !child.pid) {
+        const targetPid = child?.pid || server.pid;
+        if (!targetPid || !this.isPidAlive(targetPid)) {
             serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
+            this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
             return false;
         }
         this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Sending "stop" command to Java process STDIN...`);
-        serverModel_1.ServerModel.updateRuntimeState(server.id, 'stopping', child.pid);
-        this.emit(`status:${server.uuid}`, { status: 'stopping', pid: child.pid });
-        try {
-            child.stdin?.write('stop\n');
+        serverModel_1.ServerModel.updateRuntimeState(server.id, 'stopping', targetPid);
+        this.emit(`status:${server.uuid}`, { status: 'stopping', pid: targetPid });
+        let sentStdin = false;
+        if (child && child.stdin && !child.stdin.destroyed) {
+            try {
+                child.stdin.write('stop\n');
+                sentStdin = true;
+            }
+            catch (err) {
+                console.warn(`[ProcessManager] Write to stdin failed: ${err.message}`);
+            }
         }
-        catch { }
-        // Force terminate if still running after 10 seconds
-        setTimeout(() => {
-            if (this.activeProcesses.has(server.uuid)) {
-                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Graceful stop timeout. Sending SIGTERM...`);
+        if (!sentStdin && targetPid) {
+            try {
+                process.kill(targetPid, 'SIGTERM');
+            }
+            catch (err) {
+                console.warn(`[ProcessManager] SIGTERM to PID ${targetPid} failed: ${err.message}`);
+            }
+        }
+        // Schedule 10-second graceful stop fallback timer
+        const timer = setTimeout(() => {
+            this.stopTimers.delete(server.uuid);
+            if (this.isProcessRunning(server.uuid)) {
+                this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Graceful stop timeout. Sending SIGTERM to PID ${targetPid}...`);
                 try {
-                    child.kill('SIGTERM');
+                    process.kill(targetPid, 'SIGTERM');
                 }
                 catch { }
+                // Secondary fallback: SIGKILL after 3 more seconds if still alive
+                setTimeout(() => {
+                    if (this.isProcessRunning(server.uuid)) {
+                        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Process unresponsive. Force killing PID ${targetPid} (SIGKILL)...`);
+                        this.killServer(server);
+                    }
+                }, 3000);
             }
         }, 10000);
+        this.stopTimers.set(server.uuid, timer);
         return true;
     }
     restartServer(server) {
         this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Restarting server instance...`);
-        this.stopServer(server);
-        setTimeout(() => {
-            this.startServer(server);
-        }, 3000);
-        return true;
+        if (this.isProcessRunning(server.uuid)) {
+            this.stopServer(server);
+            // Poll every second until process terminates or max 12 seconds
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (!this.isProcessRunning(server.uuid) || attempts >= 12) {
+                    clearInterval(checkInterval);
+                    if (this.isProcessRunning(server.uuid)) {
+                        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Restart force killing lingering process...`);
+                        this.killServer(server);
+                    }
+                    setTimeout(() => {
+                        const freshServer = serverModel_1.ServerModel.findById(server.id) || server;
+                        this.startServer(freshServer);
+                    }, 1000);
+                }
+            }, 1000);
+            return true;
+        }
+        else {
+            return this.startServer(server);
+        }
     }
     killServer(server) {
+        this.clearStopTimer(server.uuid);
         const child = this.activeProcesses.get(server.uuid);
+        const targetPid = child?.pid || server.pid;
+        this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Force killing Java process (SIGKILL)...`);
         if (child) {
-            this.logOutput(server.uuid, `[${this.getTimeStamp()}] [System] Force killing Java process (SIGKILL)...`);
             try {
                 child.kill('SIGKILL');
             }
             catch { }
             this.activeProcesses.delete(server.uuid);
+        }
+        if (targetPid && this.isPidAlive(targetPid)) {
+            try {
+                process.kill(targetPid, 'SIGKILL');
+            }
+            catch { }
+            try {
+                (0, child_process_1.execSync)(`kill -9 ${targetPid} 2>/dev/null || true`);
+            }
+            catch { }
         }
         serverModel_1.ServerModel.updateRuntimeState(server.id, 'offline', null);
         this.emit(`status:${server.uuid}`, { status: 'offline', pid: null });
@@ -259,7 +349,7 @@ class ProcessManager extends events_1.EventEmitter {
     }
     sendCommand(server, command) {
         const child = this.activeProcesses.get(server.uuid);
-        if (!child || !child.pid || !child.stdin) {
+        if (!child || !child.pid || !child.stdin || child.stdin.destroyed) {
             return false;
         }
         const cleanCmd = command.trim();
@@ -279,7 +369,7 @@ class ProcessManager extends events_1.EventEmitter {
         if (!isRunning) {
             return {
                 isRunning: false,
-                status: currentStatus,
+                status: currentStatus === 'online' ? 'offline' : currentStatus,
                 cpuText: 'Not Running',
                 ramText: 'Waiting for Java process...',
                 playersText: 'No players online',
@@ -287,11 +377,9 @@ class ProcessManager extends events_1.EventEmitter {
                 ramValMb: 0
             };
         }
-        const proc = this.activeProcesses.get(server.uuid);
-        const pid = proc?.pid;
         return {
             isRunning: true,
-            status: 'online',
+            status: currentStatus || 'online',
             cpuText: '12%',
             ramText: '380 MB',
             playersText: '0 players',
