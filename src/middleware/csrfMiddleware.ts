@@ -26,7 +26,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
 
   // 2. Validate token on state-changing methods
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    const clientToken = req.body?._csrf || req.headers['x-csrf-token'];
+    // Check body (urlencoded/json), header (XHR), and query string (multipart/form-data uploads)
+    const clientToken = req.body?._csrf || req.headers['x-csrf-token'] || req.query?._csrf;
     const validToken = token;
     const cookieToken = req.cookies?._csrf;
     const sessionToken = req.session?.csrfSecret;
@@ -39,6 +40,18 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
 
     if (!isValid) {
       console.warn(`⚠️ CSRF mismatch for ${req.path}: Client=[${clientToken}] expected=[${validToken}]`);
+
+      // Return JSON error for AJAX/fetch requests instead of HTML redirect
+      const isJson = req.xhr || req.headers.accept?.includes('json') || req.headers['x-requested-with'] === 'XMLHttpRequest';
+      if (isJson) {
+        res.status(403).json({
+          success: false,
+          error: 'CSRF_TOKEN_INVALID',
+          message: 'Your security token expired. Refresh the page and try again.'
+        });
+        return;
+      }
+
       const referer = req.header('Referer');
       if (referer) {
         const sep = referer.includes('?') ? '&' : '?';

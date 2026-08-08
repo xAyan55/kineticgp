@@ -208,7 +208,7 @@
       <h3 class="text-base font-bold text-white">Upload File</h3>
       <button onclick="closeModal('uploadModal')" class="text-neutral-400 hover:text-white">&times;</button>
     </div>
-    <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/upload?path=<%= encodeURIComponent(currentPath) %>" enctype="multipart/form-data" class="space-y-4 text-xs">
+    <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/upload?path=<%= encodeURIComponent(currentPath) %>&_csrf=<%= encodeURIComponent(_csrf) %>" enctype="multipart/form-data" class="space-y-4 text-xs">
       <input type="hidden" name="_csrf" value="<%= _csrf %>">
       <input type="hidden" name="path" value="<%= currentPath %>">
       <div>
