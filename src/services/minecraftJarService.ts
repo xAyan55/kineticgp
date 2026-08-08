@@ -124,9 +124,24 @@ export class MinecraftJarService extends EventEmitter {
 
     // 1. PaperMC API
     if (softLower.includes('paper')) {
-      const apiUri = `https://api.papermc.io/v2/projects/paper/versions/${version}`;
-      if (logger) logger(`[HTTP] GET ${apiUri}`);
+      // Primary: fill.papermc.io v3 (api.papermc.io/v2 was decommissioned, returns HTTP 410)
       try {
+        const fillUri = `https://fill.papermc.io/v3/projects/paper/versions/${version}/builds/latest`;
+        if (logger) logger(`[HTTP] GET ${fillUri}`);
+        const buildInfo = await this.fetchJson<{
+          id: number;
+          downloads?: { 'server:default'?: { url?: string } };
+        }>(fillUri);
+        const url = buildInfo?.downloads?.['server:default']?.url;
+        if (url) return url;
+      } catch (e) {
+        if (logger) logger(`[Installer] PaperMC fill API resolution failed for ${version}, trying legacy API...`);
+      }
+
+      // Fallback: legacy api.papermc.io v2
+      try {
+        const apiUri = `https://api.papermc.io/v2/projects/paper/versions/${version}`;
+        if (logger) logger(`[HTTP] GET ${apiUri}`);
         const buildInfo = await this.fetchJson<{ builds: number[] }>(apiUri);
         if (buildInfo && buildInfo.builds && buildInfo.builds.length > 0) {
           const latestBuild = buildInfo.builds[buildInfo.builds.length - 1];
