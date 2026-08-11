@@ -32,10 +32,10 @@ INSTALL_DIR="/var/www/kineticgp"
 echo -e "${BLUE}🔹 Step 1/6: Installing system prerequisites...${NC}"
 if command -v apt-get &> /dev/null; then
   apt-get update -y
-  apt-get install -y curl git unzip build-essential python3 python3-distutils 2>/dev/null || \
-  apt-get install -y curl git unzip build-essential python3
+  apt-get install -y curl git unzip build-essential python3 python3-distutils openjdk-21-jre-headless 2>/dev/null || \
+  apt-get install -y curl git unzip build-essential python3 openjdk-21-jre-headless
 elif command -v dnf &> /dev/null; then
-  dnf install -y curl git unzip gcc-c++ make python3
+  dnf install -y curl git unzip gcc-c++ make python3 java-21-openjdk-headless
 fi
 
 # ── Step 2: Node.js 20 LTS ───────────────────────────────────────────
