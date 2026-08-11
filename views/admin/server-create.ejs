@@ -91,32 +91,49 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
             <div>
               <label class="block font-semibold text-neutral-300 mb-1.5">Software Engine</label>
-              <select name="software" class="w-full px-4 py-3 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
-                <option value="Paper">Paper (High Performance & Plugins)</option>
-                <option value="Purpur">Purpur (Optimized Paper Fork)</option>
-                <option value="Vanilla">Vanilla (Official Mojang Build)</option>
-                <option value="Fabric">Fabric (Modded Engine)</option>
-                <option value="Forge">Forge (Legacy Mod Engine)</option>
+              <select id="softwareSelect" name="software" class="w-full px-4 py-3 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
+                <optgroup label="Server Software">
+                  <option value="Paper" selected>Paper (High Performance & Plugins)</option>
+                  <option value="Purpur">Purpur (Optimized Paper Fork)</option>
+                  <option value="Spigot">Spigot (Classic Bukkit Fork)</option>
+                  <option value="Folia">Folia (Multithreaded Paper Fork)</option>
+                  <option value="Vanilla">Vanilla (Official Mojang Server)</option>
+                  <option value="Pufferfish">Pufferfish (Performance Fork)</option>
+                  <option value="Leaves">Leaves (Vanilla-Faithful Paper)</option>
+                  <option value="Canvas">Canvas (Performance Folia Fork)</option>
+                </optgroup>
+                <optgroup label="Modded Software">
+                  <option value="Fabric">Fabric (Lightweight Mod Loader)</option>
+                  <option value="Forge">Forge (Classic Mod Platform)</option>
+                  <option value="NeoForge">NeoForge (Modern Forge Successor)</option>
+                  <option value="Quilt">Quilt (Community Mod Toolchain)</option>
+                  <option value="Mohist">Mohist (Forge + Spigot Plugins)</option>
+                  <option value="Arclight">Arclight (Bukkit + Mixin Modding)</option>
+                  <option value="Sponge">Sponge (Modding Platform)</option>
+                </optgroup>
+                <optgroup label="Proxy Software">
+                  <option value="Velocity">Velocity (Modern Proxy)</option>
+                  <option value="BungeeCord">BungeeCord (Classic Proxy)</option>
+                  <option value="Waterfall">Waterfall (Deprecated Proxy)</option>
+                </optgroup>
               </select>
             </div>
 
             <div>
               <label class="block font-semibold text-neutral-300 mb-1.5">Minecraft Version</label>
-              <select name="version" class="w-full px-4 py-3 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
-                <option value="1.20.4" selected>1.20.4 (Stable)</option>
-                <option value="1.20.2">1.20.2</option>
-                <option value="1.20.1">1.20.1</option>
-                <option value="1.21">1.21</option>
-                <option value="1.26.2">1.26.2 (Latest)</option>
-                <option value="1.19.4">1.19.4</option>
-              </select>
+              <input type="text" id="versionInput" name="version" list="versionSuggestions" autocomplete="off" placeholder="Loading versions..." required
+                class="w-full px-4 py-3 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
+              <datalist id="versionSuggestions"></datalist>
+              <p id="versionHint" class="text-[11px] text-neutral-500 mt-1">Type or select a Minecraft version (e.g. 1.21.4)</p>
             </div>
 
             <div>
               <label class="block font-semibold text-neutral-300 mb-1.5">Java Runtime Environment</label>
-              <select name="java_version" class="w-full px-4 py-3 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
+              <select id="javaSelect" name="java_version" class="w-full px-4 py-3 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
                 <option value="21" selected>OpenJDK 21 (LTS - Recommended)</option>
                 <option value="17">OpenJDK 17 (LTS)</option>
+                <option value="16">OpenJDK 16</option>
+                <option value="8">OpenJDK 8 (Legacy)</option>
               </select>
             </div>
           </div>
@@ -211,3 +228,105 @@
 </div>
 
 <%- include('../layouts/footer', { script: null }) %>
+
+<script>
+(function() {
+  const softwareSelect = document.getElementById('softwareSelect');
+  const versionInput = document.getElementById('versionInput');
+  const versionSuggestions = document.getElementById('versionSuggestions');
+  const versionHint = document.getElementById('versionHint');
+  const javaSelect = document.getElementById('javaSelect');
+
+  let cachedVersions = {};
+  let currentVersions = [];
+
+  async function loadVersions(software) {
+    versionInput.placeholder = 'Loading versions...';
+    versionInput.value = '';
+    versionSuggestions.innerHTML = '';
+
+    if (cachedVersions[software]) {
+      applyVersions(cachedVersions[software]);
+      return;
+    }
+
+    try {
+      const res = await fetch('/admin/servers/api/versions/' + encodeURIComponent(software));
+      const data = await res.json();
+      if (data.success && data.versions.length > 0) {
+        cachedVersions[software] = data.versions;
+        applyVersions(data.versions);
+      } else {
+        versionInput.placeholder = 'Type a version (e.g. 1.21.4)';
+        versionHint.textContent = 'No versions found from MCJars. You can still type any version.';
+        currentVersions = [];
+      }
+    } catch (e) {
+      versionInput.placeholder = 'Type a version (e.g. 1.21.4)';
+      versionHint.textContent = 'Could not reach MCJars API. Type any valid version.';
+      currentVersions = [];
+    }
+  }
+
+  function applyVersions(versions) {
+    currentVersions = versions;
+    versionSuggestions.innerHTML = '';
+
+    versions.forEach(function(v) {
+      const opt = document.createElement('option');
+      const label = v.supported ? ' (Supported)' : '';
+      opt.value = v.id;
+      opt.textContent = v.id + label + ' — Java ' + v.java;
+      versionSuggestions.appendChild(opt);
+    });
+
+    // Auto-fill with the latest supported release
+    const latestSupported = versions.find(function(v) { return v.supported; }) || versions[0];
+    if (latestSupported) {
+      versionInput.value = latestSupported.id;
+      versionInput.placeholder = 'Type a version (e.g. ' + latestSupported.id + ')';
+      updateJava(latestSupported.java);
+      versionHint.textContent = versions.length + ' versions available. Latest supported: ' + latestSupported.id;
+    }
+  }
+
+  function updateJava(javaVersion) {
+    if (!javaVersion) return;
+    const val = String(javaVersion);
+    for (let i = 0; i < javaSelect.options.length; i++) {
+      if (javaSelect.options[i].value === val) {
+        javaSelect.value = val;
+        return;
+      }
+    }
+    // If not in list, select the highest available
+    javaSelect.value = '21';
+  }
+
+  // When user types or selects a version, update Java recommendation
+  versionInput.addEventListener('input', function() {
+    const typed = versionInput.value.trim();
+    const match = currentVersions.find(function(v) { return v.id === typed; });
+    if (match) {
+      updateJava(match.java);
+      versionHint.textContent = match.id + ' — ' + (match.supported ? 'Supported' : 'Unsupported') + ' — Requires Java ' + match.java;
+    }
+  });
+
+  versionInput.addEventListener('change', function() {
+    const typed = versionInput.value.trim();
+    const match = currentVersions.find(function(v) { return v.id === typed; });
+    if (match) {
+      updateJava(match.java);
+      versionHint.textContent = match.id + ' — ' + (match.supported ? 'Supported' : 'Unsupported') + ' — Requires Java ' + match.java;
+    }
+  });
+
+  softwareSelect.addEventListener('change', function() {
+    loadVersions(softwareSelect.value);
+  });
+
+  // Initial load
+  loadVersions(softwareSelect.value);
+})();
+</script>

@@ -1,12 +1,23 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/authMiddleware';
 import { ServerDashboardController, fileUpload } from '../controllers/serverDashboardController';
+import { McJarsVersionService } from '../services/mcjarsVersionService';
 
 const router = Router();
 
 // Protect all server routes with auth
 router.use(requireAuth);
 
+// JSON API: fetch available versions for a given software type (user-facing)
+router.get('/api/versions/:software', async (req, res) => {
+  try {
+    const software = req.params.software;
+    const versions = await McJarsVersionService.getVersions(software);
+    res.json({ success: true, versions });
+  } catch (e) {
+    res.json({ success: false, versions: [] });
+  }
+});
 router.get('/:uuid', ServerDashboardController.getIndex);
 
 // Console & SSE

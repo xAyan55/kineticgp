@@ -102,24 +102,41 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block font-semibold text-neutral-400 mb-1">Server Software</label>
-              <select name="software" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white">
-                <option value="Paper" <%= server.software === 'Paper' ? 'selected' : '' %>>Paper (Recommended)</option>
-                <option value="Purpur" <%= server.software === 'Purpur' ? 'selected' : '' %>>Purpur</option>
-                <option value="Vanilla" <%= server.software === 'Vanilla' ? 'selected' : '' %>>Vanilla</option>
-                <option value="Fabric" <%= server.software === 'Fabric' ? 'selected' : '' %>>Fabric</option>
+              <select id="reinstallSoftware" name="software" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white">
+                <optgroup label="Server Software">
+                  <option value="Paper" <%= server.software === 'Paper' ? 'selected' : '' %>>Paper (Recommended)</option>
+                  <option value="Purpur" <%= server.software === 'Purpur' ? 'selected' : '' %>>Purpur</option>
+                  <option value="Spigot" <%= server.software === 'Spigot' ? 'selected' : '' %>>Spigot</option>
+                  <option value="Folia" <%= server.software === 'Folia' ? 'selected' : '' %>>Folia</option>
+                  <option value="Vanilla" <%= server.software === 'Vanilla' ? 'selected' : '' %>>Vanilla</option>
+                  <option value="Pufferfish" <%= server.software === 'Pufferfish' ? 'selected' : '' %>>Pufferfish</option>
+                  <option value="Leaves" <%= server.software === 'Leaves' ? 'selected' : '' %>>Leaves</option>
+                  <option value="Canvas" <%= server.software === 'Canvas' ? 'selected' : '' %>>Canvas</option>
+                </optgroup>
+                <optgroup label="Modded Software">
+                  <option value="Fabric" <%= server.software === 'Fabric' ? 'selected' : '' %>>Fabric</option>
+                  <option value="Forge" <%= server.software === 'Forge' ? 'selected' : '' %>>Forge</option>
+                  <option value="NeoForge" <%= server.software === 'NeoForge' ? 'selected' : '' %>>NeoForge</option>
+                  <option value="Quilt" <%= server.software === 'Quilt' ? 'selected' : '' %>>Quilt</option>
+                  <option value="Mohist" <%= server.software === 'Mohist' ? 'selected' : '' %>>Mohist</option>
+                  <option value="Arclight" <%= server.software === 'Arclight' ? 'selected' : '' %>>Arclight</option>
+                  <option value="Sponge" <%= server.software === 'Sponge' ? 'selected' : '' %>>Sponge</option>
+                </optgroup>
+                <optgroup label="Proxy Software">
+                  <option value="Velocity" <%= server.software === 'Velocity' ? 'selected' : '' %>>Velocity</option>
+                  <option value="BungeeCord" <%= server.software === 'BungeeCord' ? 'selected' : '' %>>BungeeCord</option>
+                  <option value="Waterfall" <%= server.software === 'Waterfall' ? 'selected' : '' %>>Waterfall</option>
+                </optgroup>
               </select>
             </div>
 
             <div>
               <label class="block font-semibold text-neutral-400 mb-1">Minecraft Version</label>
-              <select name="version" class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white">
-                <option value="1.20.4" <%= server.version === '1.20.4' ? 'selected' : '' %>>1.20.4</option>
-                <option value="1.20.2" <%= server.version === '1.20.2' ? 'selected' : '' %>>1.20.2</option>
-                <option value="1.20.1" <%= server.version === '1.20.1' ? 'selected' : '' %>>1.20.1</option>
-                <option value="1.21" <%= server.version === '1.21' ? 'selected' : '' %>>1.21</option>
-                <option value="1.26.2" <%= server.version === '1.26.2' ? 'selected' : '' %>>1.26.2 (Latest)</option>
-                <option value="1.19.4" <%= server.version === '1.19.4' ? 'selected' : '' %>>1.19.4</option>
-              </select>
+              <input type="text" id="reinstallVersion" name="version" list="reinstallVersionSuggestions" autocomplete="off"
+                value="<%= server.version %>" placeholder="Type a version (e.g. 1.21.4)" required
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+              <datalist id="reinstallVersionSuggestions"></datalist>
+              <p id="reinstallHint" class="text-[11px] text-neutral-500 mt-1">Type or pick a Minecraft version</p>
             </div>
           </div>
 
@@ -135,3 +152,84 @@
 </div>
 
 <%- include('../layouts/footer', { script: null }) %>
+
+<script>
+(function() {
+  const softwareSelect = document.getElementById('reinstallSoftware');
+  const versionInput = document.getElementById('reinstallVersion');
+  const datalist = document.getElementById('reinstallVersionSuggestions');
+  const hint = document.getElementById('reinstallHint');
+
+  let cachedVersions = {};
+  let currentVersions = [];
+  const initialVersion = '<%= server.version %>';
+
+  async function loadVersions(software, preserveValue) {
+    datalist.innerHTML = '';
+
+    if (cachedVersions[software]) {
+      applyVersions(cachedVersions[software], preserveValue);
+      return;
+    }
+
+    try {
+      const res = await fetch('/dashboard/server/api/versions/' + encodeURIComponent(software));
+      const data = await res.json();
+      if (data.success && data.versions.length > 0) {
+        cachedVersions[software] = data.versions;
+        applyVersions(data.versions, preserveValue);
+      } else {
+        hint.textContent = 'No versions found. You can still type any version.';
+        currentVersions = [];
+      }
+    } catch (e) {
+      hint.textContent = 'Could not reach MCJars API.';
+      currentVersions = [];
+    }
+  }
+
+  function applyVersions(versions, preserveValue) {
+    currentVersions = versions;
+    datalist.innerHTML = '';
+
+    versions.forEach(function(v) {
+      const opt = document.createElement('option');
+      const label = v.supported ? ' (Supported)' : '';
+      opt.value = v.id;
+      opt.textContent = v.id + label + ' — Java ' + v.java;
+      datalist.appendChild(opt);
+    });
+
+    if (!preserveValue) {
+      const latestSupported = versions.find(function(v) { return v.supported; }) || versions[0];
+      if (latestSupported) {
+        versionInput.value = latestSupported.id;
+      }
+    }
+    hint.textContent = versions.length + ' versions available.';
+  }
+
+  versionInput.addEventListener('input', function() {
+    const typed = versionInput.value.trim();
+    const match = currentVersions.find(function(v) { return v.id === typed; });
+    if (match) {
+      hint.textContent = match.id + ' — ' + (match.supported ? 'Supported' : 'Unsupported') + ' — Java ' + match.java;
+    }
+  });
+
+  versionInput.addEventListener('change', function() {
+    const typed = versionInput.value.trim();
+    const match = currentVersions.find(function(v) { return v.id === typed; });
+    if (match) {
+      hint.textContent = match.id + ' — ' + (match.supported ? 'Supported' : 'Unsupported') + ' — Java ' + match.java;
+    }
+  });
+
+  softwareSelect.addEventListener('change', function() {
+    loadVersions(softwareSelect.value, false);
+  });
+
+  // Initial load — preserve the server's current version
+  loadVersions(softwareSelect.value, true);
+})();
+</script>

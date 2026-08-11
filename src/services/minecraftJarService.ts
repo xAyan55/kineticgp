@@ -45,7 +45,11 @@ export class MinecraftJarService extends EventEmitter {
     bungeecord: 'BUNGEECORD',
     leaves: 'LEAVES',
     magma: 'MAGMA',
-    mohist: 'MOHIST'
+    mohist: 'MOHIST',
+    pufferfish: 'PUFFERFISH',
+    sponge: 'SPONGE',
+    arclight: 'ARCLIGHT',
+    canvas: 'CANVAS',
   };
 
   static getStoragePath(serverUuid: string): string {
