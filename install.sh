@@ -5,6 +5,7 @@
 # ====================================================================
 
 export DEBIAN_FRONTEND=noninteractive
+export NODE_ENV=development
 
 # Color definitions
 RED='\033[0;31m'
@@ -65,7 +66,7 @@ echo -e "${GREEN}✅ Node.js $(node -v 2>/dev/null || echo 'installed') & npm $(
 # Step 3: PM2 Process Manager
 if ! command -v pm2 >/dev/null 2>&1; then
   echo -e "${YELLOW}Installing PM2 process manager globally...${NC}"
-  npm install -g pm2 --quiet || sudo npm install -g pm2 --quiet || true
+  npm install -g pm2 || sudo npm install -g pm2 || true
 fi
 
 # Step 4: Clone / Update repository
@@ -74,17 +75,24 @@ mkdir -p "$(dirname "$INSTALL_DIR")"
 if [ -d "$INSTALL_DIR/.git" ]; then
   echo -e "${YELLOW}Updating existing installation...${NC}"
   cd "$INSTALL_DIR"
-  git pull origin main || true
+  git fetch origin main
+  git reset --hard origin/main
 else
   rm -rf "$INSTALL_DIR"
   git clone https://github.com/xAyan55/kineticgp.git "$INSTALL_DIR"
   cd "$INSTALL_DIR"
 fi
 
+cd "$INSTALL_DIR"
+
 # Step 5: Install dependencies & compile project
-echo -e "${BLUE}Step 4/6: Installing node dependencies...${NC}"
-rm -rf node_modules/better-sqlite3 2>/dev/null || true
-npm install --production=false --build-from-source --quiet
+echo -e "${BLUE}Step 4/6: Installing node dependencies (including devDependencies)...${NC}"
+npm install --include=dev --unsafe-perm
+
+if [ ! -d "node_modules/express" ]; then
+  echo -e "${RED}❌ Missing express in node_modules! Retrying npm install...${NC}"
+  npm install --force
+fi
 
 echo -e "${BLUE}Step 5/6: Compiling TypeScript and CSS bundle...${NC}"
 npm run build
@@ -95,7 +103,7 @@ chmod -R 777 storage 2>/dev/null || true
 # Step 6: Start service with PM2
 echo -e "${BLUE}Step 6/6: Launching KineticGP with PM2...${NC}"
 pm2 delete KineticGP >/dev/null 2>&1 || true
-pm2 start ecosystem.config.js || node dist/app.js &
+pm2 start ecosystem.config.js
 pm2 save >/dev/null 2>&1 || true
 
 SERVER_IP=$(curl -s https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}' || echo "localhost")
