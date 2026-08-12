@@ -158,9 +158,9 @@ export class ModrinthService {
    * Search for Bukkit/Paper/Spigot plugins on Modrinth.
    */
   static async searchPlugins(query: string = '', options?: { offset?: number; limit?: number; index?: string }): Promise<{ hits: ModrinthSearchHit[]; total_hits: number }> {
-    const limit = options?.limit || 20;
+    const limit = options?.limit || 12;
     const offset = options?.offset || 0;
-    const index = options?.index || 'relevance';
+    const index = options?.index || 'downloads';
 
     // Facets targeting Bukkit/Paper/Spigot plugins
     const facets = JSON.stringify([

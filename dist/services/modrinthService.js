@@ -67,9 +67,9 @@ class ModrinthService {
      * Search for Bukkit/Paper/Spigot plugins on Modrinth.
      */
     static async searchPlugins(query = '', options) {
-        const limit = options?.limit || 20;
+        const limit = options?.limit || 12;
         const offset = options?.offset || 0;
-        const index = options?.index || 'relevance';
+        const index = options?.index || 'downloads';
         // Facets targeting Bukkit/Paper/Spigot plugins
         const facets = JSON.stringify([
             ['categories:bukkit', 'categories:paper', 'categories:spigot', 'categories:purpur']

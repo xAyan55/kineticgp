@@ -96,9 +96,10 @@ export class PluginController {
     try {
       const query = String(req.query.q || req.query.query || '');
       const offset = parseInt(String(req.query.offset || '0'), 10) || 0;
-      const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
+      const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '12'), 10) || 12));
+      const index = String(req.query.index || 'downloads');
 
-      const result = await ModrinthService.searchPlugins(query, { offset, limit });
+      const result = await ModrinthService.searchPlugins(query, { offset, limit, index });
 
       // Multi-stage filtering: strictly Bukkit/Paper plugins
       const filteredHits = result.hits.filter(hit => PluginCompatibilityService.isPluginProject(hit));
