@@ -141,6 +141,11 @@ export class ServerDashboardController {
       }
     };
 
+    // Send initial status and metrics immediately on connection
+    const initialMetrics = processMgr.getLiveMetrics(server);
+    sseWrite(`event: status\ndata: ${JSON.stringify({ status: initialMetrics.status })}\n\n`);
+    sseWrite(`event: metrics\ndata: ${JSON.stringify(initialMetrics)}\n\n`);
+
     // Replay missed events if Last-Event-ID is present (SSE reconnection)
     const lastEventIdHeader = req.headers['last-event-id'] as string | undefined;
     const lastEventId = lastEventIdHeader ? parseInt(lastEventIdHeader, 10) : 0;
@@ -197,6 +202,17 @@ export class ServerDashboardController {
       clearInterval(heartbeatInterval);
       res.end();
     });
+  }
+
+  // Get Recent Logs for "Load recent logs" button
+  static getRecentLogs(req: Request, res: Response): void {
+    const auth = ServerDashboardController.authorizeServerAccess(req, res);
+    if (!auth) return;
+
+    const { server } = auth;
+    const processMgr = ProcessManager.getInstance();
+    const history = processMgr.getConsoleHistory(server.uuid);
+    res.json({ success: true, logs: history });
   }
 
   // Server Power Actions (Start, Stop, Restart, Kill)

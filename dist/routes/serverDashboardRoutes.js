@@ -3,13 +3,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const serverDashboardController_1 = require("../controllers/serverDashboardController");
+const mcjarsVersionService_1 = require("../services/mcjarsVersionService");
 const router = (0, express_1.Router)();
 // Protect all server routes with auth
 router.use(authMiddleware_1.requireAuth);
+// JSON API: fetch available versions for a given software type (user-facing)
+router.get('/api/versions/:software', async (req, res) => {
+    try {
+        const software = req.params.software;
+        const versions = await mcjarsVersionService_1.McJarsVersionService.getVersions(software);
+        res.json({ success: true, versions });
+    }
+    catch (e) {
+        res.json({ success: false, versions: [] });
+    }
+});
 router.get('/:uuid', serverDashboardController_1.ServerDashboardController.getIndex);
 // Console & SSE
 router.get('/:uuid/console', serverDashboardController_1.ServerDashboardController.getConsole);
 router.get('/:uuid/sse', serverDashboardController_1.ServerDashboardController.streamConsoleSSE);
+router.get('/:uuid/recent-logs', serverDashboardController_1.ServerDashboardController.getRecentLogs);
 router.post('/:uuid/power', serverDashboardController_1.ServerDashboardController.postPowerAction);
 router.post('/:uuid/command', serverDashboardController_1.ServerDashboardController.postSendCommand);
 // Web File Manager

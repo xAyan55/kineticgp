@@ -10,6 +10,7 @@ const fs_1 = __importDefault(require("fs"));
 const events_1 = require("events");
 const database_1 = require("../db/database");
 const serverModel_1 = require("../models/serverModel");
+const metricsService_1 = require("./metricsService");
 class ProcessManager extends events_1.EventEmitter {
     static instance;
     activeProcesses = new Map();
@@ -428,29 +429,10 @@ class ProcessManager extends events_1.EventEmitter {
         }
     }
     getLiveMetrics(server) {
-        const isRunning = this.isProcessRunning(server.uuid);
         const dbServer = serverModel_1.ServerModel.findById(server.id) || server;
-        const currentStatus = dbServer.status;
-        if (!isRunning) {
-            return {
-                isRunning: false,
-                status: currentStatus === 'online' ? 'offline' : currentStatus,
-                cpuText: 'N/A',
-                ramText: 'N/A',
-                playersText: '0 players',
-                cpuVal: 0,
-                ramValMb: 0
-            };
-        }
-        return {
-            isRunning: true,
-            status: currentStatus || 'online',
-            cpuText: 'N/A',
-            ramText: 'N/A',
-            playersText: '0 players',
-            cpuVal: 0,
-            ramValMb: 0
-        };
+        const child = this.activeProcesses.get(server.uuid);
+        const targetPid = child?.pid || dbServer.pid;
+        return metricsService_1.MetricsService.getServerMetrics(dbServer, targetPid ?? null);
     }
 }
 exports.ProcessManager = ProcessManager;

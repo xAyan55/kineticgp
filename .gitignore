@@ -1,5 +1,6 @@
 node_modules/
-storage/database.sqlite
+storage/*.sqlite*
+storage/*.db*
 .env
 temp_kinetic/
 temp_panel/

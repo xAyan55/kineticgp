@@ -23,6 +23,7 @@ router.get('/:uuid', ServerDashboardController.getIndex);
 // Console & SSE
 router.get('/:uuid/console', ServerDashboardController.getConsole);
 router.get('/:uuid/sse', ServerDashboardController.streamConsoleSSE);
+router.get('/:uuid/recent-logs', ServerDashboardController.getRecentLogs);
 router.post('/:uuid/power', ServerDashboardController.postPowerAction);
 router.post('/:uuid/command', ServerDashboardController.postSendCommand);
 

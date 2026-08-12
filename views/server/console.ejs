@@ -1,15 +1,15 @@
 <%- include('../layouts/header', { title: title }) %>
 
-<div class="h-screen bg-[#101213] flex flex-col lg:flex-row overflow-hidden">
+<div class="min-h-screen lg:h-screen bg-[#101213] flex flex-col lg:flex-row overflow-x-hidden lg:overflow-hidden">
   <%- include('../components/sidebar') %>
 
-  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 flex flex-col overflow-hidden">
-    <!-- Top Bar / Breadcrumb Navigation -->
-    <header class="h-14 px-4 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
-      <div class="flex items-center gap-2 text-sm text-neutral-400">
+  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 flex flex-col min-w-0 overflow-y-auto lg:overflow-hidden">
+    <!-- Top Bar / Breadcrumb Navigation & Power Toolbar -->
+    <header class="h-14 px-4 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#101213]/90 backdrop-blur-xl sticky top-0 z-20 flex-shrink-0">
+      <div class="flex items-center gap-2 text-xs sm:text-sm text-neutral-400 truncate">
         <span class="text-white font-medium">Servers</span>
         <span>/</span>
-        <span class="text-[#1873d3] font-medium"><%= server.name %></span>
+        <span class="text-[#1873d3] font-medium truncate"><%= server.name %></span>
         <span>/</span>
         <span class="text-neutral-300">Console</span>
       </div>
@@ -55,14 +55,14 @@
       </div>
     </header>
 
-    <div class="px-4 lg:px-8 py-3 max-w-[1600px] w-full mx-auto flex-1 flex flex-col gap-2 overflow-hidden">
+    <div class="px-4 lg:px-6 py-4 max-w-[1700px] w-full mx-auto flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden gap-4">
 
       <!-- LIVE INSTALLER PROGRESS (Only if Installing) -->
-      <div id="installerSection" class="kgp-card p-5 border-purple-500/20 bg-purple-500/[0.02] <%= ['installing', 'downloading', 'configuring', 'queued'].includes(server.status) ? '' : 'hidden' %>">
-        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+      <div id="installerSection" class="kgp-card p-4 border-purple-500/20 bg-purple-500/[0.02] flex-shrink-0 <%= ['installing', 'downloading', 'configuring', 'queued'].includes(server.status) ? '' : 'hidden' %>">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></span>
-            <h3 class="text-sm font-bold text-white">Provisioning Pipeline</h3>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Provisioning Server Engine</h3>
           </div>
           <span id="installProgressSpeed" class="text-xs font-mono text-purple-400 font-bold">Downloading...</span>
         </div>
@@ -77,90 +77,146 @@
         </div>
       </div>
 
-      <!-- COMPACT STATUS BAR -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
-          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">Status</span>
-          <div class="flex items-center gap-1.5 mt-0.5">
-            <%
-              let indicatorClass = 'bg-neutral-600';
-              if (server.status === 'online') indicatorClass = 'bg-emerald-400 animate-pulse';
-              else if (['installing', 'downloading', 'configuring', 'queued'].includes(server.status)) indicatorClass = 'bg-purple-400 animate-pulse';
-              else if (server.status === 'failed') indicatorClass = 'bg-red-500';
-            %>
-            <span id="statusIndicator" class="w-2 h-2 rounded-full <%= indicatorClass %>"></span>
-            <span id="statusText" class="text-sm font-bold text-white uppercase"><%= server.status %></span>
-            <span id="headerStatusBadge" class="hidden"><%= server.status %></span>
-          </div>
-        </div>
-        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
-          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">CPU</span>
-          <p id="cpuVal" class="text-sm font-bold text-white mt-0.5"><%= metrics.cpuText %></p>
-          <div class="w-full h-0.5 bg-neutral-800 rounded-full mt-1 overflow-hidden">
-            <div id="cpuBar" class="h-full bg-[#1873d3] rounded-full transition-all" style="width: <%= metrics.cpuVal %>%"></div>
-          </div>
-        </div>
-        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
-          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">Memory</span>
-          <p id="ramVal" class="text-sm font-bold text-white mt-0.5"><%= metrics.ramText %></p>
-          <div class="w-full h-0.5 bg-neutral-800 rounded-full mt-1 overflow-hidden">
-            <div id="ramBar" class="h-full bg-emerald-400 rounded-full transition-all" style="width: <%= metrics.isRunning ? Math.round((metrics.ramValMb / server.ram_limit) * 100) : 0 %>%"></div>
-          </div>
-        </div>
-        <div class="bg-[#141618] rounded-lg border border-white/5 px-4 py-2.5">
-          <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider block">Address</span>
-          <p class="text-sm font-bold font-mono text-emerald-400 mt-0.5 truncate">127.0.0.1:<%= server.port %></p>
-          <span id="playersText" class="text-[9px] text-neutral-500 font-mono block"><%= metrics.playersText %></span>
-        </div>
-      </div>
+      <!-- MAIN LAYOUT GRID (75% Left Terminal, 25% Right Metrics Stack) -->
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
+        
+        <!-- LEFT COLUMN: CONSOLE TERMINAL CARD (75% / col-span-8 or 9) -->
+        <div class="lg:col-span-8 xl:col-span-9 flex flex-col bg-[#0d0e0f] rounded-xl border border-white/[0.06] overflow-hidden min-h-[480px] lg:min-h-0">
+          
+          <!-- Terminal Top Header -->
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 flex-shrink-0 bg-[#141618]/50">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-neutral-400 tracking-wide">console</span>
+              <span id="connectionDot" class="w-2 h-2 rounded-full bg-emerald-400 ml-2"></span>
+              <span id="connectionText" class="text-[11px] text-emerald-400/80 font-mono">Connected</span>
+            </div>
 
-      <!-- CONSOLE TERMINAL CARD -->
-      <div class="bg-[#0d0e0f] rounded-xl border border-white/[0.06] flex flex-col flex-1 min-h-0 overflow-hidden">
-
-        <!-- Terminal Header -->
-        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 flex-shrink-0">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-            <span class="text-[11px] text-neutral-500 ml-1.5" style="font-family: 'JetBrains Mono', monospace;">server@kineticgp:~</span>
-            <!-- Connection Indicator -->
-            <span id="connectionDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-2"></span>
-            <span id="connectionText" class="text-[10px] text-emerald-400/80">Connected</span>
+            <div class="flex items-center gap-2">
+              <button onclick="loadRecentLogs()" id="loadLogsBtn" class="text-xs text-neutral-400 hover:text-white px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/5 transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Load recent logs</span>
+              </button>
+              <button onclick="clearConsole()" class="text-xs text-neutral-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition">Clear</button>
+              <button onclick="copyConsole()" class="text-xs text-neutral-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition">Copy</button>
+              <button onclick="toggleAutoscroll()" id="scrollBtn" class="text-xs text-emerald-400 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/15 transition">⇊ Auto</button>
+            </div>
           </div>
-          <div class="flex items-center gap-1">
-            <button onclick="clearConsole()" class="text-[11px] text-neutral-500 hover:text-neutral-300 px-2 py-1 rounded hover:bg-white/5 transition">Clear</button>
-            <button onclick="copyConsole()" class="text-[11px] text-neutral-500 hover:text-neutral-300 px-2 py-1 rounded hover:bg-white/5 transition">Copy</button>
-            <button onclick="toggleAutoscroll()" id="scrollBtn" class="text-[11px] text-emerald-400 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/15 transition">⇊ Auto</button>
+
+          <!-- Terminal Output Viewport -->
+          <div id="consoleTerminal" class="flex-1 overflow-y-auto px-4 py-3 min-h-0 relative" style="font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace; font-size: 12px; line-height: 1.65;">
+            <% if (logs.length === 0) { %>
+              <div id="emptyLogPrompt" class="text-neutral-600 font-mono">[System] Real-time console stream initialized. Waiting for process output...</div>
+            <% } else { %>
+              <% logs.forEach(function(line) { %>
+                <div class="console-line hover:bg-white/[0.015] rounded-sm px-1 -mx-1"><%= line %></div>
+              <% }); %>
+            <% } %>
+          </div>
+
+          <!-- Jump to Latest Button -->
+          <div id="jumpToLatest" class="hidden absolute bottom-20 left-1/2 -translate-x-1/2 z-10">
+            <button onclick="jumpToBottom()" class="px-3 py-1.5 rounded-full bg-[#1873d3] text-white text-[11px] font-semibold shadow-lg shadow-black/40 hover:bg-[#1462b8] transition flex items-center gap-1">
+              ↓ Jump to latest
+            </button>
+          </div>
+
+          <!-- Command Input Bar -->
+          <div class="border-t border-white/5 flex-shrink-0 bg-[#101213]">
+            <form id="commandForm" class="flex items-center">
+              <span class="text-neutral-600 pl-4 text-sm font-mono">&gt;</span>
+              <input type="text" id="cmdInput" <%= server.status !== 'online' ? 'disabled' : '' %> placeholder="<%= server.status === 'online' ? 'Type a command...' : 'Server is offline' %>" class="flex-1 px-3 py-3 bg-transparent text-neutral-200 text-xs focus:outline-none placeholder-neutral-600 disabled:opacity-40 disabled:cursor-not-allowed font-mono">
+              <button type="submit" id="cmdSendBtn" <%= server.status !== 'online' ? 'disabled' : '' %> class="px-4 py-3 text-xs font-semibold text-[#1873d3] hover:text-white hover:bg-[#1873d3]/20 transition disabled:opacity-30 disabled:cursor-not-allowed font-mono">Send</button>
+            </form>
           </div>
         </div>
 
-        <!-- Terminal Output Stream -->
-        <div id="consoleTerminal" class="flex-1 overflow-y-auto px-4 py-3 min-h-0" style="font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6;">
-          <% if (logs.length === 0) { %>
-            <div class="text-neutral-600">[System] Real-time console stream initialized. Waiting for process output...</div>
-          <% } else { %>
-            <% logs.forEach(function(line) { %>
-              <div class="console-line hover:bg-white/[0.015] rounded-sm px-1 -mx-1"><%= line %></div>
-            <% }); %>
-          <% } %>
+        <!-- RIGHT COLUMN: 5 STACKED METRIC CARDS (25% / col-span-4 or 3) -->
+        <div class="lg:col-span-4 xl:col-span-3 flex flex-col gap-3 overflow-y-auto pr-0.5">
+
+          <!-- CARD 1: IP ADDRESS -->
+          <div class="bg-[#141618] rounded-xl border border-white/5 p-4 flex flex-col justify-between relative">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-neutral-400 font-medium">IP Address:</span>
+              <button onclick="copyIpAddress()" title="Copy Address" class="p-1 rounded hover:bg-white/5 text-neutral-400 hover:text-white transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              </button>
+            </div>
+            <div class="mt-2">
+              <span id="cardAddressText" class="text-base font-bold font-mono text-white tracking-tight"><%= metrics.address %></span>
+            </div>
+          </div>
+
+          <!-- CARD 2: STATUS -->
+          <div class="bg-[#141618] rounded-xl border border-white/5 p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-neutral-400 font-medium">Status:</span>
+              <button onclick="loadRecentLogs()" class="text-xs text-[#1873d3] hover:underline font-medium">Open logs</button>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <%
+                let statusColor = 'text-neutral-400';
+                if (server.status === 'online') statusColor = 'text-emerald-400';
+                else if (server.status === 'offline') statusColor = 'text-red-400';
+                else if (['installing', 'downloading', 'configuring'].includes(server.status)) statusColor = 'text-purple-400';
+                else if (['starting', 'stopping'].includes(server.status)) statusColor = 'text-amber-400';
+              %>
+              <span id="cardStatusBadge" class="text-lg font-bold uppercase tracking-wide <%= statusColor %>"><%= server.status %></span>
+            </div>
+          </div>
+
+          <!-- CARD 3: RAM USAGE -->
+          <div class="bg-[#141618] rounded-xl border border-white/5 p-4 flex flex-col justify-between">
+            <span class="text-xs text-neutral-400 font-medium">RAM Usage:</span>
+            <div class="mt-2">
+              <p id="cardRamText" class="text-sm font-bold text-white font-mono">
+                <% if (metrics.memory && metrics.memory.usedBytes !== null) { %>
+                  <%= metrics.memory.percent %>% (<%= (metrics.memory.usedBytes / (1024*1024)).toFixed(0) %> MB / <%= (metrics.memory.limitBytes / (1024*1024*1024)).toFixed(1) %> GB)
+                <% } else { %>
+                  Unavailable
+                <% } %>
+              </p>
+              <div class="w-full h-1.5 bg-neutral-900 rounded-full mt-2 overflow-hidden border border-white/5">
+                <div id="cardRamBar" class="h-full bg-[#1873d3] rounded-full transition-all duration-300" style="width: <%= (metrics.memory && metrics.memory.percent) || 0 %>%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 4: CPU USAGE -->
+          <div class="bg-[#141618] rounded-xl border border-white/5 p-4 flex flex-col justify-between">
+            <span class="text-xs text-neutral-400 font-medium">CPU Usage:</span>
+            <div class="mt-2">
+              <p id="cardCpuText" class="text-sm font-bold text-white font-mono">
+                <% if (metrics.cpu && metrics.cpu.percent !== null) { %>
+                  <%= metrics.cpu.percent %>% of <%= metrics.cpu.cores.toFixed(1) %> cores
+                <% } else { %>
+                  Unavailable
+                <% } %>
+              </p>
+              <div class="w-full h-1.5 bg-neutral-900 rounded-full mt-2 overflow-hidden border border-white/5">
+                <div id="cardCpuBar" class="h-full bg-emerald-400 rounded-full transition-all duration-300" style="width: <%= (metrics.cpu && metrics.cpu.percent) || 0 %>%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 5: DISK USAGE -->
+          <div class="bg-[#141618] rounded-xl border border-white/5 p-4 flex flex-col justify-between">
+            <span class="text-xs text-neutral-400 font-medium">Disk Usage:</span>
+            <div class="mt-2">
+              <p id="cardDiskText" class="text-sm font-bold text-white font-mono">
+                <% if (metrics.disk && metrics.disk.usedBytes !== null) { %>
+                  <%= metrics.disk.percent !== null ? metrics.disk.percent + '%' : '' %> (<%= (metrics.disk.usedBytes / (1024*1024)).toFixed(1) %> MB / <%= metrics.disk.limitBytes ? (metrics.disk.limitBytes / (1024*1024*1024)).toFixed(0) + ' GB' : 'No Limit' %>)
+                <% } else { %>
+                  Unavailable
+                <% } %>
+              </p>
+              <div class="w-full h-1.5 bg-neutral-900 rounded-full mt-2 overflow-hidden border border-white/5">
+                <div id="cardDiskBar" class="h-full bg-purple-400 rounded-full transition-all duration-300" style="width: <%= (metrics.disk && metrics.disk.percent) || 0 %>%"></div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Jump to Latest Button (hidden by default) -->
-        <div id="jumpToLatest" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
-          <button onclick="jumpToBottom()" class="px-3 py-1.5 rounded-full bg-[#1873d3] text-white text-[11px] font-semibold shadow-lg shadow-black/30 hover:bg-[#1462b8] transition flex items-center gap-1">
-            ↓ Jump to latest
-          </button>
-        </div>
-
-        <!-- Command Input Bar -->
-        <div class="border-t border-white/5 flex-shrink-0">
-          <form id="commandForm" class="flex items-center">
-            <span class="text-neutral-600 pl-4 text-sm" style="font-family: 'JetBrains Mono', monospace;">&gt;</span>
-            <input type="text" id="cmdInput" <%= server.status !== 'online' ? 'disabled' : '' %> placeholder="<%= server.status === 'online' ? 'Type a server command...' : 'Server is offline' %>" class="flex-1 px-3 py-3 bg-transparent text-neutral-200 text-xs focus:outline-none placeholder-neutral-600 disabled:opacity-40 disabled:cursor-not-allowed" style="font-family: 'JetBrains Mono', monospace;">
-            <button type="submit" id="cmdSendBtn" <%= server.status !== 'online' ? 'disabled' : '' %> class="px-4 py-3 text-xs font-semibold text-[#1873d3] hover:text-white hover:bg-[#1873d3]/20 transition disabled:opacity-30 disabled:cursor-not-allowed" style="font-family: 'JetBrains Mono', monospace;">Send</button>
-          </form>
-        </div>
       </div>
     </div>
   </main>
@@ -186,10 +242,19 @@
   const MAX_DOM_LINES = 3000;
 
   let autoscroll = true;
-  let lastSeenEventId = 0;
   let seenEventIds = new Set();
   const terminal = document.getElementById('consoleTerminal');
   const jumpBtn = document.getElementById('jumpToLatest');
+
+  // ── Byte Formatter Helper ──
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined || isNaN(bytes)) return 'Unavailable';
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(i >= 3 ? 1 : 0) + ' ' + sizes[i];
+  }
 
   // ── Auto-scroll detection ──
   function isNearBottom() {
@@ -233,14 +298,14 @@
     const btn = document.getElementById('scrollBtn');
     if (autoscroll) {
       btn.innerText = '⇊ Auto';
-      btn.className = 'text-[11px] text-emerald-400 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/15 transition';
+      btn.className = 'text-xs text-emerald-400 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/15 transition';
     } else {
       btn.innerText = '⇊ Off';
-      btn.className = 'text-[11px] text-neutral-500 px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition';
+      btn.className = 'text-xs text-neutral-500 px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition';
     }
   }
 
-  // ── Console line rendering with semantic colors ──
+  // ── Console line rendering ──
   function getLineClass(line, type) {
     if (type === 'command') return 'text-cyan-400';
     if (type === 'system') return 'text-[#1873d3]';
@@ -252,12 +317,14 @@
   }
 
   function appendConsoleLine(line, type) {
+    const emptyPrompt = document.getElementById('emptyLogPrompt');
+    if (emptyPrompt) emptyPrompt.remove();
+
     const div = document.createElement('div');
     div.className = 'console-line hover:bg-white/[0.015] rounded-sm px-1 -mx-1 ' + getLineClass(line, type);
     div.textContent = line;
     terminal.appendChild(div);
 
-    // Cap DOM nodes
     while (terminal.children.length > MAX_DOM_LINES) {
       terminal.removeChild(terminal.firstChild);
     }
@@ -265,9 +332,32 @@
     scrollToBottom();
   }
 
-  // ── Console actions ──
+  // ── Load Recent Logs Action ──
+  async function loadRecentLogs() {
+    const loadLogsBtn = document.getElementById('loadLogsBtn');
+    try {
+      if (loadLogsBtn) loadLogsBtn.disabled = true;
+      const res = await fetch(`/dashboard/server/${SERVER_UUID}/recent-logs`);
+      const data = await res.json();
+      if (data.success && data.logs) {
+        terminal.innerHTML = '';
+        data.logs.forEach(evt => {
+          appendConsoleLine(evt.line, evt.type);
+        });
+        showToast('Recent logs reloaded.');
+      } else {
+        showToast('No logs available.');
+      }
+    } catch {
+      showToast('Failed to load recent logs.');
+    } finally {
+      if (loadLogsBtn) loadLogsBtn.disabled = false;
+    }
+  }
+
+  // ── Copy Helpers ──
   function clearConsole() {
-    terminal.innerHTML = '<div class="text-neutral-600">[Console view cleared]</div>';
+    terminal.innerHTML = '<div class="text-neutral-600 font-mono">[Console view cleared]</div>';
     showToast('Console view cleared');
   }
 
@@ -277,6 +367,15 @@
       showToast('Console copied to clipboard');
     }).catch(() => {
       showToast('Failed to copy');
+    });
+  }
+
+  function copyIpAddress() {
+    const addr = document.getElementById('cardAddressText').innerText;
+    navigator.clipboard.writeText(addr).then(() => {
+      showToast('IP address copied to clipboard');
+    }).catch(() => {
+      showToast('Failed to copy IP');
     });
   }
 
@@ -305,27 +404,21 @@
     const killDisabledCls = 'py-1.5 px-2.5 rounded-lg bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed text-xs transition';
 
     if (status === 'online') {
-      startBtn.disabled = true;
-      startBtn.className = disabledCls;
-      restartBtn.disabled = false;
-      restartBtn.className = 'py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-xs transition flex items-center gap-1';
-      stopBtn.disabled = false;
-      stopBtn.className = 'py-1.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1';
-      killBtn.disabled = false;
-      killBtn.className = 'py-1.5 px-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
-      if (cmdInput) { cmdInput.disabled = false; cmdInput.placeholder = 'Type a server command...'; }
+      startBtn.disabled = true; startBtn.className = disabledCls;
+      restartBtn.disabled = false; restartBtn.className = 'py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-xs transition flex items-center gap-1';
+      stopBtn.disabled = false; stopBtn.className = 'py-1.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1';
+      killBtn.disabled = false; killBtn.className = 'py-1.5 px-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+      if (cmdInput) { cmdInput.disabled = false; cmdInput.placeholder = 'Type a command...'; }
       if (cmdSendBtn) cmdSendBtn.disabled = false;
     } else if (status === 'starting' || status === 'stopping') {
       startBtn.disabled = true; startBtn.className = disabledCls;
       restartBtn.disabled = true; restartBtn.className = disabledCls;
       stopBtn.disabled = status === 'stopping'; stopBtn.className = status === 'stopping' ? disabledCls : 'py-1.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1';
-      killBtn.disabled = false;
-      killBtn.className = 'py-1.5 px-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
+      killBtn.disabled = false; killBtn.className = 'py-1.5 px-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 font-semibold text-xs transition';
       if (cmdInput) { cmdInput.disabled = true; cmdInput.placeholder = status === 'starting' ? 'Server is starting...' : 'Server is stopping...'; }
       if (cmdSendBtn) cmdSendBtn.disabled = true;
     } else {
-      startBtn.disabled = false;
-      startBtn.className = 'py-1.5 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition flex items-center gap-1';
+      startBtn.disabled = false; startBtn.className = 'py-1.5 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition flex items-center gap-1';
       restartBtn.disabled = true; restartBtn.className = disabledCls;
       stopBtn.disabled = true; stopBtn.className = disabledCls;
       killBtn.disabled = true; killBtn.className = killDisabledCls;
@@ -352,23 +445,20 @@
         appendConsoleLine('[System] ' + (data.message || 'Power action failed.'), 'system');
       }
     } catch (err) {
-      console.error('Power action error:', err);
       appendConsoleLine('[System] Network error during power action.', 'system');
     }
   }
 
-  // ── Command History ──
+  // ── Command Form ──
   let cmdHistory = JSON.parse(sessionStorage.getItem('kgp_cmd_history') || '[]');
   let cmdHistoryIdx = -1;
 
-  // ── Command Form ──
   document.getElementById('commandForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const input = document.getElementById('cmdInput');
     const cmd = input.value.trim();
     if (!cmd) return;
 
-    // Save to history
     cmdHistory.unshift(cmd);
     if (cmdHistory.length > 30) cmdHistory.pop();
     sessionStorage.setItem('kgp_cmd_history', JSON.stringify(cmdHistory));
@@ -384,15 +474,16 @@
     }).then(data => {
       if (!data.success) {
         appendConsoleLine('[System] Failed to send command: ' + (data.message || 'Server may be offline.'), 'system');
+        showToast(data.message || 'Failed to send command');
       }
     }).catch(() => {
       appendConsoleLine('[System] Network error sending command.', 'system');
+      showToast('Network error sending command');
     });
 
     input.value = '';
   });
 
-  // Arrow up/down for command history
   document.getElementById('cmdInput').addEventListener('keydown', function(e) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -412,6 +503,64 @@
     }
   });
 
+  // ── Metrics Renderer (Update 5 Sidebar Cards dynamically) ──
+  function renderMetrics(m) {
+    if (!m) return;
+
+    // Address
+    if (m.address) {
+      document.getElementById('cardAddressText').innerText = m.address;
+    }
+
+    // Status
+    if (m.status) {
+      const statusBadge = document.getElementById('cardStatusBadge');
+      statusBadge.innerText = m.status;
+      if (m.status === 'online') statusBadge.className = 'text-lg font-bold uppercase tracking-wide text-emerald-400';
+      else if (m.status === 'offline') statusBadge.className = 'text-lg font-bold uppercase tracking-wide text-red-400';
+      else if (['installing', 'downloading', 'configuring'].includes(m.status)) statusBadge.className = 'text-lg font-bold uppercase tracking-wide text-purple-400';
+      else statusBadge.className = 'text-lg font-bold uppercase tracking-wide text-amber-400';
+      
+      updatePowerButtonsState(m.status);
+    }
+
+    // RAM
+    const ramText = document.getElementById('cardRamText');
+    const ramBar = document.getElementById('cardRamBar');
+    if (m.memory && m.memory.usedBytes !== null) {
+      const pctStr = m.memory.percent !== null ? m.memory.percent + '%' : '0%';
+      ramText.innerText = `${pctStr} (${formatBytes(m.memory.usedBytes)} / ${formatBytes(m.memory.limitBytes)})`;
+      if (ramBar) ramBar.style.width = (m.memory.percent || 0) + '%';
+    } else {
+      ramText.innerText = 'Unavailable';
+      if (ramBar) ramBar.style.width = '0%';
+    }
+
+    // CPU
+    const cpuText = document.getElementById('cardCpuText');
+    const cpuBar = document.getElementById('cardCpuBar');
+    if (m.cpu && m.cpu.percent !== null) {
+      cpuText.innerText = `${m.cpu.percent}% of ${m.cpu.cores.toFixed(1)} cores`;
+      if (cpuBar) cpuBar.style.width = Math.min(100, m.cpu.percent) + '%';
+    } else {
+      cpuText.innerText = 'Unavailable';
+      if (cpuBar) cpuBar.style.width = '0%';
+    }
+
+    // Disk
+    const diskText = document.getElementById('cardDiskText');
+    const diskBar = document.getElementById('cardDiskBar');
+    if (m.disk && m.disk.usedBytes !== null) {
+      const limitStr = m.disk.limitBytes ? formatBytes(m.disk.limitBytes) : 'No Limit';
+      const pctStr = m.disk.percent !== null ? m.disk.percent + '%' : '';
+      diskText.innerText = `${pctStr} (${formatBytes(m.disk.usedBytes)} / ${limitStr})`;
+      if (diskBar) diskBar.style.width = (m.disk.percent || 0) + '%';
+    } else {
+      diskText.innerText = 'Unavailable';
+      if (diskBar) diskBar.style.width = '0%';
+    }
+  }
+
   // ── SSE Connection ──
   let eventSource = null;
 
@@ -429,17 +578,14 @@
     eventSource.addEventListener('log', function(e) {
       const data = JSON.parse(e.data);
       if (data.message) {
-        // Deduplicate using event ID
         const eventId = data.id || 0;
         if (eventId > 0) {
           if (seenEventIds.has(eventId)) return;
           seenEventIds.add(eventId);
-          // Keep seenEventIds bounded
           if (seenEventIds.size > 5000) {
             const arr = Array.from(seenEventIds);
             seenEventIds = new Set(arr.slice(-3000));
           }
-          lastSeenEventId = Math.max(lastSeenEventId, eventId);
         }
         appendConsoleLine(data.message, data.type || 'stdout');
       }
@@ -449,7 +595,6 @@
       const data = JSON.parse(e.data);
       if (data && data.status) {
         updatePowerButtonsState(data.status);
-        updateStatusDisplay(data.status);
       }
     });
 
@@ -478,15 +623,7 @@
 
     eventSource.addEventListener('metrics', function(e) {
       const m = JSON.parse(e.data);
-      if (m) {
-        document.getElementById('cpuVal').innerText = m.cpuText;
-        document.getElementById('cpuBar').style.width = m.cpuVal + '%';
-        document.getElementById('ramVal').innerText = m.ramText;
-        document.getElementById('playersText').innerText = m.playersText;
-
-        updateStatusDisplay(m.status);
-        updatePowerButtonsState(m.status);
-      }
+      renderMetrics(m);
     });
 
     eventSource.addEventListener('error', () => {
@@ -494,7 +631,6 @@
         setConnectionStatus('reconnecting');
       } else if (eventSource.readyState === EventSource.CLOSED) {
         setConnectionStatus('disconnected');
-        // Attempt manual reconnect after 5s
         setTimeout(connectSSE, 5000);
       }
     });
@@ -504,36 +640,17 @@
     const dot = document.getElementById('connectionDot');
     const text = document.getElementById('connectionText');
     if (state === 'connected') {
-      dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 ml-2';
-      text.className = 'text-[10px] text-emerald-400/80';
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-400 ml-2';
+      text.className = 'text-[11px] text-emerald-400/80 font-mono';
       text.innerText = 'Connected';
     } else if (state === 'reconnecting') {
-      dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse ml-2';
-      text.className = 'text-[10px] text-amber-400/80';
+      dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse ml-2';
+      text.className = 'text-[11px] text-amber-400/80 font-mono';
       text.innerText = 'Reconnecting...';
     } else {
-      dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 ml-2';
-      text.className = 'text-[10px] text-red-400/80';
+      dot.className = 'w-2 h-2 rounded-full bg-red-500 ml-2';
+      text.className = 'text-[11px] text-red-400/80 font-mono';
       text.innerText = 'Disconnected';
-    }
-  }
-
-  function updateStatusDisplay(status) {
-    const statusText = document.getElementById('statusText');
-    const statusInd = document.getElementById('statusIndicator');
-
-    if (statusText) statusText.innerText = status;
-
-    if (statusInd) {
-      if (status === 'online') {
-        statusInd.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-      } else if (['installing', 'downloading', 'configuring', 'queued'].includes(status)) {
-        statusInd.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
-      } else if (status === 'failed') {
-        statusInd.className = 'w-2 h-2 rounded-full bg-red-500';
-      } else {
-        statusInd.className = 'w-2 h-2 rounded-full bg-neutral-600';
-      }
     }
   }
 

@@ -26,7 +26,11 @@ class MinecraftJarService extends events_1.EventEmitter {
         bungeecord: 'BUNGEECORD',
         leaves: 'LEAVES',
         magma: 'MAGMA',
-        mohist: 'MOHIST'
+        mohist: 'MOHIST',
+        pufferfish: 'PUFFERFISH',
+        sponge: 'SPONGE',
+        arclight: 'ARCLIGHT',
+        canvas: 'CANVAS',
     };
     static getStoragePath(serverUuid) {
         const dir = path_1.default.join(process.cwd(), 'storage', 'servers', serverUuid);

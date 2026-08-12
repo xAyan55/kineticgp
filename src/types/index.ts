@@ -28,6 +28,7 @@ export interface Server {
   disk_limit: number; // GB
   directory: string;
   jar_file: string;
+  ip_address?: string;
   port: number;
   startup_command: string;
   auto_restart: number; // 0 or 1

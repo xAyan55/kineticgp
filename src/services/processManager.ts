@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { db } from '../db/database';
 import { Server } from '../types';
 import { ServerModel } from '../models/serverModel';
+import { MetricsService, ServerMetrics } from './metricsService';
 
 // Structured console event with monotonically increasing ID
 export interface ConsoleEvent {
@@ -487,39 +488,10 @@ export class ProcessManager extends EventEmitter {
     }
   }
 
-  public getLiveMetrics(server: Server): {
-    isRunning: boolean;
-    status: string;
-    cpuText: string;
-    ramText: string;
-    playersText: string;
-    cpuVal: number;
-    ramValMb: number;
-  } {
-    const isRunning = this.isProcessRunning(server.uuid);
+  public getLiveMetrics(server: Server): ServerMetrics {
     const dbServer = ServerModel.findById(server.id) || server;
-    const currentStatus = dbServer.status;
-
-    if (!isRunning) {
-      return {
-        isRunning: false,
-        status: currentStatus === 'online' ? 'offline' : currentStatus,
-        cpuText: 'N/A',
-        ramText: 'N/A',
-        playersText: '0 players',
-        cpuVal: 0,
-        ramValMb: 0
-      };
-    }
-
-    return {
-      isRunning: true,
-      status: currentStatus || 'online',
-      cpuText: 'N/A',
-      ramText: 'N/A',
-      playersText: '0 players',
-      cpuVal: 0,
-      ramValMb: 0
-    };
+    const child = this.activeProcesses.get(server.uuid);
+    const targetPid = child?.pid || dbServer.pid;
+    return MetricsService.getServerMetrics(dbServer, targetPid ?? null);
   }
 }
