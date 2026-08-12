@@ -38,4 +38,12 @@ router.get('/:uuid/files/download', serverDashboardController_1.ServerDashboardC
 // Settings
 router.get('/:uuid/settings', serverDashboardController_1.ServerDashboardController.getSettings);
 router.post('/:uuid/settings/save', serverDashboardController_1.ServerDashboardController.postSaveSettings);
+// Real Modrinth Plugin Installer
+const pluginController_1 = require("../controllers/pluginController");
+router.get('/:uuid/plugins', pluginController_1.PluginController.getPluginsPage);
+router.get('/:uuid/plugins/api/search', pluginController_1.PluginController.apiSearchPlugins);
+router.get('/:uuid/plugins/api/project/:slug', pluginController_1.PluginController.apiGetProjectDetails);
+router.get('/:uuid/plugins/api/installed', pluginController_1.PluginController.apiGetInstalled);
+router.post('/:uuid/plugins/api/install', pluginController_1.PluginController.apiInstallPlugin);
+router.post('/:uuid/plugins/api/delete', pluginController_1.PluginController.apiDeletePlugin);
 exports.default = router;

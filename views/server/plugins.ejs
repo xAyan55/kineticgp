@@ -1,0 +1,340 @@
+<%- include('../layouts/header', { title: title }) %>
+
+<div class="min-h-screen bg-[#0a0b0c] flex flex-col lg:flex-row">
+  <%- include('../components/sidebar') %>
+
+  <main class="flex-1 lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+    <!-- Top Bar / Breadcrumb Navigation -->
+    <header class="h-14 px-6 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#0a0b0c]/90 sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-xs sm:text-sm text-neutral-400">
+        <span class="text-white font-medium"><%= server.name %></span>
+        <span>/</span>
+        <span class="text-[#1873d3] font-medium">Plugins</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 rounded-full bg-[#1873d3]/10 border border-[#1873d3]/20 text-[#1873d3] text-xs font-semibold">
+          <%= server.software %> <%= server.version || '' %>
+        </span>
+        <a href="https://modrinth.com" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-400 hover:text-white transition-colors">
+          Powered by Modrinth
+        </a>
+      </div>
+    </header>
+
+    <div class="p-6 lg:p-8 max-w-[1400px] w-full mx-auto space-y-6 flex-1">
+      <!-- HEADER BANNER -->
+      <div class="kgp-card p-6 bg-[#121416] space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#1873d3]/10 border border-[#1873d3]/20 text-[#1873d3] flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 00-2 2v2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v2a2 2 0 002 2h6a2 2 0 002-2v-2h2a2 2 0 002-2V10a2 2 0 00-2-2h-2V6a2 2 0 00-2-2h-6z"/></svg>
+            </div>
+            <div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Bukkit-Compatible Plugin Installer</h1>
+              <p class="text-xs text-neutral-400">Discover, download, and manage Bukkit, Paper, Spigot, and Purpur server plugins via Modrinth.</p>
+            </div>
+          </div>
+
+          <% if (isSupported) { %>
+            <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>Plugins Enabled</span>
+            </span>
+          <% } else { %>
+            <span class="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span>Software Incompatible</span>
+            </span>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (!isSupported) { %>
+        <!-- UNSUPPORTED SOFTWARE NOTICE -->
+        <div class="kgp-card p-8 text-center space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div class="max-w-md mx-auto space-y-1">
+            <h3 class="text-base font-bold text-white">Plugin Installation Unavailable</h3>
+            <p class="text-xs text-neutral-400">
+              Plugin installation is disabled because this server software (<strong class="text-white"><%= server.software %></strong>) does not support Bukkit-family plugins.
+            </p>
+          </div>
+          <p class="text-xs text-neutral-500">
+            Bukkit-compatible software includes: <span class="text-neutral-300">Paper, Purpur, Spigot, and Bukkit</span>.
+          </p>
+        </div>
+      <% } else { %>
+
+        <!-- MODRINTH SEARCH & INSTALLED SECTION (2-Column Grid) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- LEFT COLUMN: INSTALLED PLUGINS (5 cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            <div class="kgp-card p-5 space-y-4">
+              <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base font-bold text-white">Installed Plugins</h2>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#1873d3]/10 text-[#1873d3] border border-[#1873d3]/30" id="installedCount">
+                    <%= installedPlugins.length %>
+                  </span>
+                </div>
+                <span class="text-[11px] font-mono text-neutral-400">plugins/</span>
+              </div>
+
+              <div class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar" id="installedList">
+                <% if (installedPlugins.length === 0) { %>
+                  <p class="text-xs text-neutral-500 py-8 text-center" id="noPluginsMsg">No .jar plugins installed on disk yet.</p>
+                <% } else { %>
+                  <% installedPlugins.forEach(function(plugin) { %>
+                    <div class="flex items-center justify-between gap-3 p-3 rounded-lg bg-[#0d0e0f] border border-white/5 text-xs group" id="item-<%= plugin.filename %>">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div class="truncate">
+                          <p class="font-semibold text-white truncate font-mono"><%= plugin.filename %></p>
+                          <p class="text-[10px] text-neutral-400 mt-0.5"><%= plugin.formattedSize %> • Modified <%= plugin.modified %></p>
+                        </div>
+                      </div>
+                      <button onclick="confirmDelete('<%= plugin.filename %>')" title="Remove plugin JAR" class="btn-danger text-[11px] px-2.5 py-1 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                        Delete
+                      </button>
+                    </div>
+                  <% }); %>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: MODRINTH PLUGIN DISCOVERY (7 cols) -->
+          <div class="lg:col-span-7 space-y-4">
+            <div class="kgp-card p-5 space-y-4">
+              <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                <h2 class="text-base font-bold text-white">Search Modrinth Plugins</h2>
+                <span class="text-xs text-neutral-400">Target MC: <%= server.version || '1.21' %></span>
+              </div>
+
+              <!-- Search Bar -->
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input type="text" id="searchInput" placeholder="Search Bukkit/Paper plugins (e.g. WorldEdit, Vault, LuckPerms)..." class="kgp-input w-full pl-9 pr-4 py-2 text-xs">
+                  <svg class="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <button onclick="triggerSearch()" class="btn-kinetic text-xs px-4">Search</button>
+              </div>
+
+              <!-- Search Status / Loading -->
+              <div id="searchStatus" class="text-xs text-neutral-400 hidden flex items-center gap-2 py-1">
+                <span class="w-3 h-3 rounded-full border-2 border-[#1873d3] border-t-transparent animate-spin"></span>
+                <span>Searching Modrinth API...</span>
+              </div>
+
+              <!-- Search Results Grid -->
+              <div class="space-y-3 min-h-[300px]" id="searchResults">
+                <!-- Initial Popular Plugins Prompt -->
+                <p class="text-xs text-neutral-500 py-12 text-center">Type a search term above to discover Bukkit/Paper plugins on Modrinth.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      <% } %>
+
+    </div>
+  </main>
+</div>
+
+<!-- CSRF Token Hidden Holder -->
+<input type="hidden" id="csrfToken" value="<%= csrfToken %>">
+<input type="hidden" id="serverUuid" value="<%= server.uuid %>">
+
+<%- include('../layouts/footer', { script: null }) %>
+
+<script>
+const serverUuid = document.getElementById('serverUuid').value;
+const csrfToken = document.getElementById('csrfToken').value;
+
+let searchTimeout = null;
+
+document.getElementById('searchInput')?.addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    triggerSearch();
+  }, 400);
+});
+
+async function triggerSearch() {
+  const query = document.getElementById('searchInput').value.trim();
+  const statusEl = document.getElementById('searchStatus');
+  const resultsEl = document.getElementById('searchResults');
+
+  if (!query) {
+    resultsEl.innerHTML = '<p class="text-xs text-neutral-500 py-12 text-center">Type a search term above to discover Bukkit/Paper plugins on Modrinth.</p>';
+    return;
+  }
+
+  statusEl.classList.remove('hidden');
+  
+  try {
+    const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/search?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    statusEl.classList.add('hidden');
+
+    if (!data.success) {
+      resultsEl.innerHTML = `<p class="text-xs text-red-400 py-8 text-center">${data.message || 'Search failed.'}</p>`;
+      return;
+    }
+
+    if (!data.hits || data.hits.length === 0) {
+      resultsEl.innerHTML = '<p class="text-xs text-neutral-500 py-8 text-center">No compatible Bukkit/Paper plugins found matching your query.</p>';
+      return;
+    }
+
+    renderSearchHits(data.hits);
+  } catch (err) {
+    statusEl.classList.add('hidden');
+    resultsEl.innerHTML = '<p class="text-xs text-red-400 py-8 text-center">Failed to connect to Modrinth API.</p>';
+  }
+}
+
+function renderSearchHits(hits) {
+  const resultsEl = document.getElementById('searchResults');
+  resultsEl.innerHTML = hits.map(hit => {
+    const iconUrl = hit.icon_url || '/images/products_img/mc.webp';
+    const downloadsStr = hit.downloads ? hit.downloads.toLocaleString() : '0';
+    
+    return `
+      <div class="p-4 rounded-xl bg-[#0d0e0f] border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-start gap-3 min-w-0">
+          <img src="${iconUrl}" onerror="this.src='/images/products_img/mc.webp'" class="w-10 h-10 rounded-lg border border-white/10 object-cover flex-shrink-0">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold text-white truncate">${hit.title}</h3>
+              <span class="text-[10px] text-neutral-400 font-mono">by ${hit.author}</span>
+            </div>
+            <p class="text-xs text-neutral-400 mt-0.5 line-clamp-2">${hit.description || 'No description available.'}</p>
+            <div class="flex items-center gap-3 text-[10px] text-neutral-500 mt-1.5">
+              <span>📥 ${downloadsStr} downloads</span>
+              <span>⚡ ${hit.categories.slice(0, 3).join(', ')}</span>
+            </div>
+          </div>
+        </div>
+        <button onclick="installPlugin('${hit.project_id}', '${hit.title.replace(/'/g, "\\'")}', this)" class="btn-kinetic text-xs px-3.5 py-1.5 flex-shrink-0">
+          Install
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function installPlugin(projectId, title, btnEl) {
+  const originalText = btnEl.innerText;
+  btnEl.disabled = true;
+  btnEl.innerText = 'Downloading...';
+
+  try {
+    const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/install`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({ projectId, _csrf: csrfToken })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(`Installation Failed: ${data.message}`);
+      btnEl.disabled = false;
+      btnEl.innerText = originalText;
+      return;
+    }
+
+    btnEl.innerText = 'Installed!';
+    btnEl.classList.remove('btn-kinetic');
+    btnEl.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/40');
+
+    if (data.requiresRestart) {
+      alert(`Plugin "${data.filename}" (${data.version}) installed to disk successfully!\n\nNote: Server is currently online. Restart the server to load the new plugin into Minecraft.`);
+    } else {
+      alert(`Plugin "${data.filename}" (${data.version}) installed successfully to plugins/ directory!`);
+    }
+
+    refreshInstalledList();
+  } catch (err) {
+    alert('Installation request failed. Please check network connection.');
+    btnEl.disabled = false;
+    btnEl.innerText = originalText;
+  }
+}
+
+async function confirmDelete(filename) {
+  if (!confirm(`Are you sure you want to delete plugin file "${filename}" from disk?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({ filename, _csrf: csrfToken })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(`Delete Failed: ${data.message}`);
+      return;
+    }
+
+    refreshInstalledList();
+  } catch (err) {
+    alert('Failed to delete plugin file.');
+  }
+}
+
+async function refreshInstalledList() {
+  try {
+    const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/installed`);
+    const data = await res.json();
+
+    if (data.success && data.installedPlugins) {
+      const countEl = document.getElementById('installedCount');
+      const listEl = document.getElementById('installedList');
+
+      if (countEl) countEl.innerText = data.installedPlugins.length;
+
+      if (data.installedPlugins.length === 0) {
+        listEl.innerHTML = '<p class="text-xs text-neutral-500 py-8 text-center">No .jar plugins installed on disk yet.</p>';
+      } else {
+        listEl.innerHTML = data.installedPlugins.map(p => `
+          <div class="flex items-center justify-between gap-3 p-3 rounded-lg bg-[#0d0e0f] border border-white/5 text-xs group" id="item-${p.filename}">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="truncate">
+                <p class="font-semibold text-white truncate font-mono">${p.filename}</p>
+                <p class="text-[10px] text-neutral-400 mt-0.5">${p.formattedSize} • Modified ${p.modified}</p>
+              </div>
+            </div>
+            <button onclick="confirmDelete('${p.filename}')" title="Remove plugin JAR" class="btn-danger text-[11px] px-2.5 py-1 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+              Delete
+            </button>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (e) {
+    // Ignore refresh errors
+  }
+}
+</script>
