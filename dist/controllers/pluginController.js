@@ -214,5 +214,28 @@ class PluginController {
             });
         }
     }
+    /**
+     * API: Get live plugin installation progress (GET /dashboard/server/:uuid/plugins/api/progress)
+     */
+    static apiGetProgress(req, res) {
+        const auth = PluginController.authorize(req, res);
+        if (!auth)
+            return;
+        const { server } = auth;
+        const projectId = String(req.query.projectId || '');
+        const lockKey = `${server.uuid}:${projectId}`;
+        const progress = pluginManagerService_1.PluginManagerService.getProgress(lockKey);
+        res.json({
+            success: true,
+            progress: progress || {
+                loadedBytes: 0,
+                totalBytes: 0,
+                percent: 0,
+                status: 'downloading',
+                formattedLoaded: '0 B',
+                formattedTotal: '0 B'
+            }
+        });
+    }
 }
 exports.PluginController = PluginController;

@@ -44,6 +44,7 @@ router.get('/:uuid/plugins', pluginController_1.PluginController.getPluginsPage)
 router.get('/:uuid/plugins/api/search', pluginController_1.PluginController.apiSearchPlugins);
 router.get('/:uuid/plugins/api/project/:slug', pluginController_1.PluginController.apiGetProjectDetails);
 router.get('/:uuid/plugins/api/installed', pluginController_1.PluginController.apiGetInstalled);
+router.get('/:uuid/plugins/api/progress', pluginController_1.PluginController.apiGetProgress);
 router.post('/:uuid/plugins/api/install', pluginController_1.PluginController.apiInstallPlugin);
 router.post('/:uuid/plugins/api/delete', pluginController_1.PluginController.apiDeletePlugin);
 exports.default = router;

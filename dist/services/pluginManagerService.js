@@ -15,6 +15,16 @@ const modrinthService_1 = require("./modrinthService");
 const activityModel_1 = require("../models/activityModel");
 class PluginManagerService {
     static operationLocks = new Set();
+    static progressMap = new Map();
+    static getProgress(lockKey) {
+        return this.progressMap.get(lockKey) || null;
+    }
+    static setProgress(lockKey, progress) {
+        this.progressMap.set(lockKey, progress);
+    }
+    static clearProgress(lockKey) {
+        this.progressMap.delete(lockKey);
+    }
     static acquireLock(key) {
         if (this.operationLocks.has(key))
             return false;
@@ -61,7 +71,7 @@ class PluginManagerService {
      * Safely streams download an HTTPS file to a temporary .tmp destination,
      * calculating SHA-512 / SHA-1 hashes during stream execution.
      */
-    static downloadStream(url, destTmpPath, expectedHashes) {
+    static downloadStream(url, destTmpPath, expectedHashes, lockKey) {
         return new Promise((resolve, reject) => {
             const fileStream = fs_1.default.createWriteStream(destTmpPath);
             const hash512 = crypto_1.default.createHash('sha512');
@@ -83,13 +93,48 @@ class PluginManagerService {
                     });
                     return;
                 }
+                const totalHeader = res.headers['content-length'];
+                const totalBytes = totalHeader ? parseInt(totalHeader, 10) : 0;
+                let loadedBytes = 0;
+                if (lockKey) {
+                    PluginManagerService.setProgress(lockKey, {
+                        loadedBytes: 0,
+                        totalBytes,
+                        percent: 0,
+                        status: 'downloading',
+                        formattedLoaded: '0 B',
+                        formattedTotal: fileManagerService_1.FileManagerService.formatBytes(totalBytes)
+                    });
+                }
                 res.on('data', (chunk) => {
+                    loadedBytes += chunk.length;
+                    const percent = totalBytes > 0 ? Math.min(100, Math.round((loadedBytes / totalBytes) * 100)) : 0;
+                    if (lockKey) {
+                        PluginManagerService.setProgress(lockKey, {
+                            loadedBytes,
+                            totalBytes,
+                            percent,
+                            status: 'downloading',
+                            formattedLoaded: fileManagerService_1.FileManagerService.formatBytes(loadedBytes),
+                            formattedTotal: fileManagerService_1.FileManagerService.formatBytes(totalBytes)
+                        });
+                    }
                     hash512.update(chunk);
                     hash1.update(chunk);
                     fileStream.write(chunk);
                 });
                 res.on('end', () => {
                     fileStream.end(() => {
+                        if (lockKey) {
+                            PluginManagerService.setProgress(lockKey, {
+                                loadedBytes,
+                                totalBytes,
+                                percent: 100,
+                                status: 'verifying',
+                                formattedLoaded: fileManagerService_1.FileManagerService.formatBytes(loadedBytes),
+                                formattedTotal: fileManagerService_1.FileManagerService.formatBytes(totalBytes)
+                            });
+                        }
                         const computed512 = hash512.digest('hex');
                         const computed1 = hash1.digest('hex');
                         if (expectedHashes?.sha512 && computed512.toLowerCase() !== expectedHashes.sha512.toLowerCase()) {
@@ -184,7 +229,7 @@ class PluginManagerService {
             if (fs_1.default.existsSync(targetJarPath)) {
                 // Plugin file exists
             }
-            await this.downloadStream(primaryFile.url, tempTmpPath, primaryFile.hashes);
+            await this.downloadStream(primaryFile.url, tempTmpPath, primaryFile.hashes, lockKey);
             // Atomic rename
             if (fs_1.default.existsSync(targetJarPath)) {
                 fs_1.default.unlinkSync(targetJarPath);
@@ -199,6 +244,7 @@ class PluginManagerService {
             };
         }
         finally {
+            this.clearProgress(lockKey);
             this.releaseLock(lockKey);
         }
     }

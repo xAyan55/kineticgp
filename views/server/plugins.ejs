@@ -314,7 +314,30 @@ function changePage(delta) {
 async function installPlugin(projectId, title, btnEl) {
   const originalText = btnEl.innerText;
   btnEl.disabled = true;
-  btnEl.innerText = 'Downloading...';
+  btnEl.innerText = 'Initializing...';
+
+  // Start Real-Time Progress Polling (every 250ms)
+  let pollInterval = setInterval(async () => {
+    try {
+      const pRes = await fetch(`/dashboard/server/${serverUuid}/plugins/api/progress?projectId=${projectId}`);
+      const pData = await pRes.json();
+
+      if (pData.success && pData.progress) {
+        const prog = pData.progress;
+        if (prog.status === 'verifying') {
+          btnEl.innerText = 'Verifying SHA-512...';
+          btnEl.style.background = 'linear-gradient(to right, #1873d3 100%, #121416 100%)';
+        } else if (prog.percent > 0) {
+          btnEl.innerText = `Downloading... ${prog.percent}% (${prog.formattedLoaded} / ${prog.formattedTotal})`;
+          btnEl.style.background = `linear-gradient(to right, #1873d3 ${prog.percent}%, #121416 ${prog.percent}%)`;
+        } else {
+          btnEl.innerText = 'Downloading...';
+        }
+      }
+    } catch (e) {
+      // Ignore polling errors
+    }
+  }, 250);
 
   try {
     const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/install`, {
@@ -326,16 +349,29 @@ async function installPlugin(projectId, title, btnEl) {
       body: JSON.stringify({ projectId, _csrf: csrfToken })
     });
 
-    const data = await res.json();
+    clearInterval(pollInterval);
 
-    if (!data.success) {
-      alert(`Installation Failed: ${data.message}`);
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      alert(`Installation Error: Server returned status ${res.status}. Please try again.`);
       btnEl.disabled = false;
       btnEl.innerText = originalText;
+      btnEl.style.background = '';
+      return;
+    }
+
+    if (!data.success) {
+      alert(`Installation Failed: ${data.message || data.error || 'Unknown error'}`);
+      btnEl.disabled = false;
+      btnEl.innerText = originalText;
+      btnEl.style.background = '';
       return;
     }
 
     btnEl.innerText = 'Installed!';
+    btnEl.style.background = '';
     btnEl.classList.remove('btn-kinetic');
     btnEl.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/40');
 
@@ -347,9 +383,11 @@ async function installPlugin(projectId, title, btnEl) {
 
     refreshInstalledList();
   } catch (err) {
-    alert('Installation request failed. Please check network connection.');
+    clearInterval(pollInterval);
+    alert('Installation request timed out or failed to connect to server. Please try again.');
     btnEl.disabled = false;
     btnEl.innerText = originalText;
+    btnEl.style.background = '';
   }
 }
 

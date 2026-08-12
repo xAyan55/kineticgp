@@ -20,8 +20,30 @@ export interface InstalledPluginInfo {
   isExternal: boolean;
 }
 
+export interface PluginDownloadProgress {
+  loadedBytes: number;
+  totalBytes: number;
+  percent: number;
+  status: 'downloading' | 'verifying' | 'completed' | 'failed';
+  formattedLoaded: string;
+  formattedTotal: string;
+}
+
 export class PluginManagerService {
   private static operationLocks = new Set<string>();
+  private static progressMap = new Map<string, PluginDownloadProgress>();
+
+  static getProgress(lockKey: string): PluginDownloadProgress | null {
+    return this.progressMap.get(lockKey) || null;
+  }
+
+  private static setProgress(lockKey: string, progress: PluginDownloadProgress): void {
+    this.progressMap.set(lockKey, progress);
+  }
+
+  private static clearProgress(lockKey: string): void {
+    this.progressMap.delete(lockKey);
+  }
 
   private static acquireLock(key: string): boolean {
     if (this.operationLocks.has(key)) return false;
@@ -73,7 +95,7 @@ export class PluginManagerService {
    * Safely streams download an HTTPS file to a temporary .tmp destination,
    * calculating SHA-512 / SHA-1 hashes during stream execution.
    */
-  private static downloadStream(url: string, destTmpPath: string, expectedHashes?: { sha512?: string; sha1?: string }): Promise<void> {
+  private static downloadStream(url: string, destTmpPath: string, expectedHashes?: { sha512?: string; sha1?: string }, lockKey?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const fileStream = fs.createWriteStream(destTmpPath);
       const hash512 = crypto.createHash('sha512');
@@ -97,7 +119,34 @@ export class PluginManagerService {
           return;
         }
 
+        const totalHeader = res.headers['content-length'];
+        const totalBytes = totalHeader ? parseInt(totalHeader, 10) : 0;
+        let loadedBytes = 0;
+
+        if (lockKey) {
+          PluginManagerService.setProgress(lockKey, {
+            loadedBytes: 0,
+            totalBytes,
+            percent: 0,
+            status: 'downloading',
+            formattedLoaded: '0 B',
+            formattedTotal: FileManagerService.formatBytes(totalBytes)
+          });
+        }
+
         res.on('data', (chunk: any) => {
+          loadedBytes += chunk.length;
+          const percent = totalBytes > 0 ? Math.min(100, Math.round((loadedBytes / totalBytes) * 100)) : 0;
+          if (lockKey) {
+            PluginManagerService.setProgress(lockKey, {
+              loadedBytes,
+              totalBytes,
+              percent,
+              status: 'downloading',
+              formattedLoaded: FileManagerService.formatBytes(loadedBytes),
+              formattedTotal: FileManagerService.formatBytes(totalBytes)
+            });
+          }
           hash512.update(chunk);
           hash1.update(chunk);
           fileStream.write(chunk);
@@ -105,6 +154,17 @@ export class PluginManagerService {
 
         res.on('end', () => {
           fileStream.end(() => {
+            if (lockKey) {
+              PluginManagerService.setProgress(lockKey, {
+                loadedBytes,
+                totalBytes,
+                percent: 100,
+                status: 'verifying',
+                formattedLoaded: FileManagerService.formatBytes(loadedBytes),
+                formattedTotal: FileManagerService.formatBytes(totalBytes)
+              });
+            }
+
             const computed512 = hash512.digest('hex');
             const computed1 = hash1.digest('hex');
 
@@ -213,7 +273,7 @@ export class PluginManagerService {
         // Plugin file exists
       }
 
-      await this.downloadStream(primaryFile.url, tempTmpPath, primaryFile.hashes);
+      await this.downloadStream(primaryFile.url, tempTmpPath, primaryFile.hashes, lockKey);
 
       // Atomic rename
       if (fs.existsSync(targetJarPath)) {
@@ -230,6 +290,7 @@ export class PluginManagerService {
         requiresRestart: server.status === 'online'
       };
     } finally {
+      this.clearProgress(lockKey);
       this.releaseLock(lockKey);
     }
   }
