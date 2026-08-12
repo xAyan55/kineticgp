@@ -31,6 +31,7 @@ class NodeService {
             return 'Not Installed / Single Node';
         }
     }
+    static prevCpuTimes = null;
     static getSystemMetrics() {
         const hostname = os_1.default.hostname();
         const platform = os_1.default.type();
@@ -38,30 +39,40 @@ class NodeService {
         const arch = os_1.default.arch();
         const cpus = os_1.default.cpus();
         const cpuModel = cpus.length > 0 ? cpus[0].model : 'Generic CPU';
-        const cpuCores = cpus.length;
+        const cpuCores = cpus.length || 1;
         const totalMem = Math.round(os_1.default.totalmem() / (1024 * 1024)); // MB
         const freeMem = Math.round(os_1.default.freemem() / (1024 * 1024)); // MB
         const usedMem = totalMem - freeMem;
-        // Estimate CPU load from loadavg or core times
-        const loadavg = os_1.default.loadavg();
+        // Estimate CPU load from tick delta or loadavg
+        let currentIdle = 0;
+        let currentTotal = 0;
+        for (const cpu of cpus) {
+            for (const type in cpu.times) {
+                currentTotal += cpu.times[type];
+            }
+            currentIdle += cpu.times.idle;
+        }
         let cpuUsage = 0;
+        const loadavg = os_1.default.loadavg();
         if (loadavg && loadavg.length > 0 && loadavg[0] > 0) {
             cpuUsage = Math.min(100, Math.round((loadavg[0] / cpuCores) * 100));
         }
-        else {
-            // Fallback calculation from CPU times
-            let idle = 0;
-            let total = 0;
-            for (const cpu of cpus) {
-                for (const type in cpu.times) {
-                    total += cpu.times[type];
-                }
-                idle += cpu.times.idle;
+        else if (this.prevCpuTimes) {
+            const idleDelta = currentIdle - this.prevCpuTimes.idle;
+            const totalDelta = currentTotal - this.prevCpuTimes.total;
+            if (totalDelta > 0) {
+                cpuUsage = Math.max(0, Math.min(100, Math.round(100 - (100 * idleDelta / totalDelta))));
             }
-            cpuUsage = Math.round(100 - (100 * idle / total));
+            else {
+                cpuUsage = 5;
+            }
         }
+        else {
+            cpuUsage = 10; // Initial sample baseline
+        }
+        this.prevCpuTimes = { idle: currentIdle, total: currentTotal };
         if (isNaN(cpuUsage) || cpuUsage < 0)
-            cpuUsage = 15;
+            cpuUsage = 5;
         // Disk estimation (default 100 GB, used 25 GB)
         let diskTotal = 100;
         let diskUsed = 22.5;
