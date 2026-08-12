@@ -1,18 +1,18 @@
 <%- include('../layouts/header', { title: 'Audit Logs' }) %>
 
-<div class="min-h-screen bg-[#0a0b0c] flex flex-col lg:flex-row">
+<div class="min-h-screen bg-[#0D1117] flex flex-col lg:flex-row">
   <%- include('../components/sidebar') %>
 
   <main class="flex-1 lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
     <!-- Top Bar / Breadcrumb Navigation -->
-    <header class="h-14 px-6 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#0a0b0c]/90 sticky top-0 z-20">
-      <div class="flex items-center gap-2 text-xs sm:text-sm text-neutral-400">
+    <header class="h-14 px-6 lg:px-8 border-b border-[#30363D] flex items-center justify-between bg-[#0D1117]/90 sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-xs sm:text-sm text-[#8B949E]">
         <span class="text-white font-medium">Administration</span>
         <span>/</span>
-        <span class="text-[#1873d3] font-medium">Audit Logs</span>
+        <span class="text-[#2F81F7] font-medium">Audit Logs</span>
       </div>
       <div class="flex items-center gap-3">
-        <span class="px-3 py-1 rounded-full bg-neutral-800 text-neutral-400 text-xs font-mono font-semibold border border-neutral-700">
+        <span class="px-3 py-1 rounded-full bg-[#21262D] text-[#8B949E] text-xs font-mono font-semibold border border-[#30363D]">
           Immutable System Log
         </span>
       </div>
@@ -22,18 +22,18 @@
       <!-- HEADER TITLE -->
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Security & System Audit Logs</h1>
-        <p class="text-neutral-400 text-sm mt-1">Full immutable ledger recording logins, administrative actions, settings changes, user creations, and server commands.</p>
+        <p class="text-[#8B949E] text-sm mt-1">Full immutable ledger recording logins, administrative actions, settings changes, user creations, and server commands.</p>
       </div>
 
       <!-- SEARCH & FILTERS TOOLBAR -->
       <form method="GET" action="/admin/logs" class="kgp-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="relative flex-1 w-full">
-          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" name="search" value="<%= search %>" placeholder="Search by user, action, details, or IP address..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3] transition">
+          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8B949E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" name="search" value="<%= search %>" placeholder="Search by user, action, details, or IP address..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-sm text-white focus:outline-none focus:border-[#2F81F7] transition">
         </div>
 
         <div class="flex items-center gap-3 w-full sm:w-auto">
-          <select name="action" onchange="this.form.submit()" class="px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-xs text-white focus:outline-none focus:border-[#1873d3]">
+          <select name="action" onchange="this.form.submit()" class="px-3.5 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-xs text-white focus:outline-none focus:border-[#2F81F7]">
             <option value="">All Action Types</option>
             <% distinctActions.forEach(function(act) { %>
               <option value="<%= act %>" <%= actionFilter === act ? 'selected' : '' %>><%= act %></option>
@@ -45,10 +45,10 @@
       </form>
 
       <!-- AUDIT LOGS TABLE -->
-      <div class="kgp-card overflow-hidden">
+      <div class="kgp-card overflow-hidden border-[#30363D]">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-neutral-300">
-            <thead class="bg-[#101213] border-b border-white/5 text-xs uppercase tracking-wider text-neutral-400 font-semibold">
+            <thead class="bg-[#21262D] border-b border-[#30363D] text-xs uppercase tracking-wider text-[#8B949E] font-semibold">
               <tr>
                 <th class="px-6 py-4">Timestamp</th>
                 <th class="px-6 py-4">User</th>
@@ -57,26 +57,26 @@
                 <th class="px-6 py-4">Details</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-white/5">
+            <tbody class="divide-y divide-[#30363D]">
               <% if (logs.length === 0) { %>
                 <tr>
-                  <td colspan="5" class="px-6 py-8 text-center text-neutral-500 text-sm">No audit logs matching your filter criteria.</td>
+                  <td colspan="5" class="px-6 py-8 text-center text-[#8B949E] text-sm">No audit logs matching your filter criteria.</td>
                 </tr>
               <% } else { %>
                 <% logs.forEach(function(log) { %>
                   <tr class="hover:bg-white/[0.02] transition">
-                    <td class="px-6 py-4 text-xs font-mono text-neutral-400 flex-shrink-0 whitespace-nowrap">
+                    <td class="px-6 py-4 text-xs font-mono text-[#8B949E] flex-shrink-0 whitespace-nowrap">
                       <%= log.created_at %>
                     </td>
                     <td class="px-6 py-4 font-bold text-white whitespace-nowrap">
                       <%= log.username %>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-[#1873d3]/10 text-[#1873d3] border border-[#1873d3]/30">
+                      <span class="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-[#2F81F7]/10 text-[#2F81F7] border border-[#2F81F7]/30">
                         <%= log.action %>
                       </span>
                     </td>
-                    <td class="px-6 py-4 text-xs font-mono text-neutral-400 whitespace-nowrap">
+                    <td class="px-6 py-4 text-xs font-mono text-[#8B949E] whitespace-nowrap">
                       <%= log.ip_address %>
                     </td>
                     <td class="px-6 py-4 text-xs text-neutral-300">
@@ -91,7 +91,7 @@
 
         <!-- PAGINATION -->
         <% if (totalPages > 1) { %>
-          <div class="px-6 py-4 border-t border-white/5 flex items-center justify-between text-xs text-neutral-400 bg-[#101213]">
+          <div class="px-6 py-4 border-t border-[#30363D] flex items-center justify-between text-xs text-[#8B949E] bg-[#21262D]">
             <span>Page <%= page %> of <%= totalPages %> (<%= totalCount %> total log entries)</span>
             <div class="flex items-center gap-2">
               <% if (page > 1) { %>

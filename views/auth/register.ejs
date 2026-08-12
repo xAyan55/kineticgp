@@ -1,21 +1,21 @@
 <%- include('../layouts/header', { title: 'Create Account' }) %>
 
-<div class="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#0a0b0c]">
+<div class="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#0D1117]">
   <!-- Left Form Panel -->
   <div class="lg:col-span-5 flex flex-col justify-between p-8 sm:p-12 lg:p-16 z-20">
     <div>
       <a href="/" class="inline-flex items-center gap-3 mb-10 group">
         <img src="/images/logo.svg" alt="KineticGP Logo" class="h-8 w-auto transition-transform group-hover:scale-105">
-        <span class="text-xl font-bold text-white tracking-tight">Kinetic<span class="text-[#1873d3]">GP</span></span>
+        <span class="text-xl font-bold text-white tracking-tight">Kinetic<span class="text-[#2F81F7]">GP</span></span>
       </a>
 
       <div class="mb-6">
         <h1 class="text-3xl font-bold text-white tracking-tight">Create Account</h1>
-        <p class="text-sm text-neutral-400 mt-2">Get started with your self-hosted server panel</p>
+        <p class="text-sm text-[#8B949E] mt-2">Get started with your self-hosted server panel</p>
       </div>
 
       <% if (typeof error !== 'undefined' && error) { %>
-        <div class="mb-6 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium">
+        <div class="mb-6 px-4 py-3 rounded-xl bg-[#F85149]/10 border border-[#F85149]/30 text-[#F85149] text-sm font-medium">
           <% if (error === 'missing_fields') { %>Please fill out all required fields.
           <% } else if (error === 'short_username') { %>Username must be at least 3 characters.
           <% } else if (error === 'invalid_email') { %>Please enter a valid email address.
@@ -28,10 +28,10 @@
       <% } %>
 
       <!-- Default Avatar Preview Note -->
-      <div class="mb-6 p-3.5 rounded-xl bg-[#1a1c1e] border border-white/5 flex items-center gap-3 text-xs text-neutral-300">
+      <div class="mb-6 p-3.5 rounded-xl bg-[#21262D] border border-[#30363D] flex items-center gap-3 text-xs text-neutral-300">
         <div class="flex gap-1">
-          <img src="/images/banners/big-steve-face.png" alt="Steve Avatar" class="w-6 h-6 rounded-full border border-white/10">
-          <img src="/images/banners/big-alex-face.png" alt="Alex Avatar" class="w-6 h-6 rounded-full border border-white/10">
+          <img src="/images/banners/big-steve-face.png" alt="Steve Avatar" class="w-6 h-6 rounded-full border border-[#30363D]">
+          <img src="/images/banners/big-alex-face.png" alt="Alex Avatar" class="w-6 h-6 rounded-full border border-[#30363D]">
         </div>
         <span>A random Steve or Alex avatar will be automatically assigned to your profile!</span>
       </div>
@@ -40,28 +40,28 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
         <div>
-          <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">Username</label>
-          <input id="username" name="username" type="text" required placeholder="alex_craft" class="w-full px-4 py-2.5 rounded-xl bg-[#1a1c1e] border border-white/10 text-white placeholder-neutral-500 text-sm focus:border-[#1873d3] focus:ring-1 focus:ring-[#1873d3] transition">
+          <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-[#8B949E] mb-1.5">Username</label>
+          <input id="username" name="username" type="text" required placeholder="alex_craft" class="w-full px-4 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-white placeholder-neutral-500 text-sm focus:border-[#2F81F7] focus:ring-1 focus:ring-[#2F81F7] transition">
         </div>
 
         <div>
-          <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">Email Address</label>
-          <input id="email" name="email" type="email" required placeholder="alex@domain.com" class="w-full px-4 py-2.5 rounded-xl bg-[#1a1c1e] border border-white/10 text-white placeholder-neutral-500 text-sm focus:border-[#1873d3] focus:ring-1 focus:ring-[#1873d3] transition">
+          <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-[#8B949E] mb-1.5">Email Address</label>
+          <input id="email" name="email" type="email" required placeholder="alex@domain.com" class="w-full px-4 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-white placeholder-neutral-500 text-sm focus:border-[#2F81F7] focus:ring-1 focus:ring-[#2F81F7] transition">
         </div>
 
         <div>
-          <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">Password</label>
+          <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-[#8B949E] mb-1.5">Password</label>
           <div class="relative">
-            <input id="password" name="password" type="password" required placeholder="••••••••" class="w-full px-4 py-2.5 pr-11 rounded-xl bg-[#1a1c1e] border border-white/10 text-white placeholder-neutral-500 text-sm focus:border-[#1873d3] focus:ring-1 focus:ring-[#1873d3] transition">
-            <button type="button" id="pwToggle" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1" aria-label="Toggle password visibility">
+            <input id="password" name="password" type="password" required placeholder="••••••••" class="w-full px-4 py-2.5 pr-11 rounded-xl bg-[#21262D] border border-[#30363D] text-white placeholder-neutral-500 text-sm focus:border-[#2F81F7] focus:ring-1 focus:ring-[#2F81F7] transition">
+            <button type="button" id="pwToggle" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B949E] hover:text-white p-1" aria-label="Toggle password visibility">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
         </div>
 
         <div>
-          <label for="confirm_password" class="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">Confirm Password</label>
-          <input id="confirm_password" name="confirm_password" type="password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl bg-[#1a1c1e] border border-white/10 text-white placeholder-neutral-500 text-sm focus:border-[#1873d3] focus:ring-1 focus:ring-[#1873d3] transition">
+          <label for="confirm_password" class="block text-xs font-semibold uppercase tracking-wider text-[#8B949E] mb-1.5">Confirm Password</label>
+          <input id="confirm_password" name="confirm_password" type="password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-white placeholder-neutral-500 text-sm focus:border-[#2F81F7] focus:ring-1 focus:ring-[#2F81F7] transition">
         </div>
 
         <button type="submit" class="w-full btn-kinetic py-3 text-base justify-center mt-4">
@@ -70,22 +70,22 @@
         </button>
       </form>
 
-      <p class="text-sm text-center text-neutral-400 mt-6">
+      <p class="text-sm text-center text-[#8B949E] mt-6">
         Already registered? 
-        <a href="/login" class="text-[#1873d3] font-semibold hover:underline">Sign in</a>
+        <a href="/login" class="text-[#2F81F7] font-semibold hover:underline">Sign in</a>
       </p>
     </div>
 
-    <div class="pt-6 text-xs text-neutral-500">
+    <div class="pt-6 text-xs text-[#8B949E]">
       &copy; 2026 KineticGP Panel. All rights reserved.
     </div>
   </div>
 
   <!-- Right Split Image Panel -->
   <div class="hidden lg:block lg:col-span-7 relative overflow-hidden" style="background: url('/images/bgs/auth-bg.png') center/cover no-repeat;">
-    <div class="absolute inset-0 bg-gradient-to-t from-[#101213] via-[#101213]/40 to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0D1117] via-[#0D1117]/40 to-transparent"></div>
     <div class="absolute bottom-16 left-16 right-16 z-10 space-y-3">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1873d3]/30 border border-[#1873d3]/50 text-white text-xs font-semibold uppercase">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F81F7]/30 border border-[#2F81F7]/50 text-white text-xs font-semibold uppercase">
         <span>Modular Architecture</span>
       </div>
       <h2 class="text-3xl font-extrabold text-white">Built for Minecraft Power Users</h2>

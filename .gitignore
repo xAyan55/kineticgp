@@ -1,10 +1,13 @@
 node_modules/
 storage/*.sqlite*
 storage/*.db*
+dist/storage/
 .env
 temp_kinetic/
 temp_panel/
+panel-temp/
 KineticHost.zip
 panel-main.zip
 kineticgp_deploy.zip
 *.log
+console-layout.md

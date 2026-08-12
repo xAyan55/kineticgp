@@ -1,17 +1,17 @@
 <%- include('../layouts/header', { title: title }) %>
 
-<div class="min-h-screen bg-[#0a0b0c] flex flex-col lg:flex-row">
+<div class="min-h-screen bg-[#141414] flex flex-col lg:flex-row">
   <%- include('../components/sidebar') %>
 
-  <main class="flex-1 lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
     <!-- Top Bar / Breadcrumbs -->
-    <header class="h-14 px-6 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#0a0b0c]/90 sticky top-0 z-20">
+    <header class="h-16 px-6 lg:px-8 border-b border-white/10 flex items-center justify-between bg-[#141414]/80 backdrop-blur-xl sticky top-0 z-20">
       <div class="flex items-center gap-2 text-xs sm:text-sm text-neutral-400">
         <span class="text-white font-medium">Servers</span>
         <span>/</span>
-        <span class="text-[#1873d3] font-medium"><%= server.name %></span>
+        <span class="text-white font-semibold"><%= server.name %></span>
         <span>/</span>
-        <span class="text-neutral-300">File Manager</span>
+        <span class="text-neutral-400">File Manager</span>
       </div>
 
       <div class="flex items-center gap-2">
@@ -33,24 +33,24 @@
     <div class="p-6 lg:p-10 max-w-[1400px] w-full mx-auto space-y-6 flex-1">
       <!-- BREADCRUMB DIRECTORY PATH -->
       <div class="kgp-card p-4 flex items-center gap-2 text-xs font-mono text-neutral-300 overflow-x-auto">
-        <span class="text-neutral-500">Path:</span>
-        <a href="/dashboard/server/<%= server.uuid %>/files?path=/" class="hover:text-[#1873d3] font-bold">/root</a>
+        <span class="text-[#8B949E]">Path:</span>
+        <a href="/dashboard/server/<%= server.uuid %>/files?path=/" class="hover:text-[#2F81F7] font-bold">/root</a>
         <% if (currentPath !== '/') { %>
           <% const parts = currentPath.split('/').filter(Boolean); %>
           <% let acc = ''; %>
           <% parts.forEach(function(part) { %>
             <% acc += '/' + part; %>
             <span class="text-neutral-600">/</span>
-            <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(acc) %>" class="hover:text-[#1873d3]"><%= part %></a>
+            <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(acc) %>" class="hover:text-[#2F81F7]"><%= part %></a>
           <% }); %>
         <% } %>
       </div>
 
       <!-- FILE MANAGER TABLE -->
-      <div class="kgp-card overflow-hidden border-white/10">
+      <div class="kgp-card overflow-hidden border-[#30363D]">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-neutral-300">
-            <thead class="bg-[#101213] border-b border-white/5 text-xs uppercase tracking-wider text-neutral-400 font-semibold">
+            <thead class="bg-[#21262D] border-b border-[#30363D] text-xs uppercase tracking-wider text-[#8B949E] font-semibold">
               <tr>
                 <th class="px-6 py-4">Name</th>
                 <th class="px-6 py-4">Size</th>
@@ -58,11 +58,11 @@
                 <th class="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-white/5">
+            <tbody class="divide-y divide-[#30363D]">
               <% if (fileData.parentPath !== null) { %>
                 <tr class="hover:bg-white/[0.02] transition">
-                  <td colspan="4" class="px-6 py-3 font-mono text-xs text-neutral-400">
-                    <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(fileData.parentPath) %>" class="flex items-center gap-2 text-[#1873d3] hover:underline font-bold">
+                  <td colspan="4" class="px-6 py-3 font-mono text-xs text-[#8B949E]">
+                    <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(fileData.parentPath) %>" class="flex items-center gap-2 text-[#2F81F7] hover:underline font-bold">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
                       .. (Parent Directory)
                     </a>
@@ -72,7 +72,7 @@
 
               <% if (fileData.items.length === 0) { %>
                 <tr>
-                  <td colspan="4" class="px-6 py-8 text-center text-neutral-500 text-sm">Directory is empty.</td>
+                  <td colspan="4" class="px-6 py-8 text-center text-[#8B949E] text-sm">Directory is empty.</td>
                 </tr>
               <% } else { %>
                 <% fileData.items.forEach(function(item) { %>
@@ -81,21 +81,21 @@
                       <div class="flex items-center gap-3">
                         <% if (item.isDir) { %>
                           <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                          <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(item.path) %>" class="font-bold text-white hover:text-[#1873d3] truncate">
+                          <a href="/dashboard/server/<%= server.uuid %>/files?path=<%= encodeURIComponent(item.path) %>" class="font-bold text-white hover:text-[#2F81F7] truncate">
                             <%= item.name %>/
                           </a>
                         <% } else { %>
-                          <svg class="w-5 h-5 text-[#1873d3] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                          <svg class="w-5 h-5 text-[#2F81F7] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                           <a href="/dashboard/server/<%= server.uuid %>/files/edit?path=<%= encodeURIComponent(item.path) %>" class="font-medium text-neutral-200 hover:text-white truncate">
                             <%= item.name %>
                           </a>
                         <% } %>
                       </div>
                     </td>
-                    <td class="px-6 py-3.5 text-xs font-mono text-neutral-400">
+                    <td class="px-6 py-3.5 text-xs font-mono text-[#8B949E]">
                       <%= item.formattedSize %>
                     </td>
-                    <td class="px-6 py-3.5 text-xs font-mono text-neutral-400">
+                    <td class="px-6 py-3.5 text-xs font-mono text-[#8B949E]">
                       <%= item.modified %>
                     </td>
                     <td class="px-6 py-3.5 text-right">
@@ -104,7 +104,7 @@
                           <a href="/dashboard/server/<%= server.uuid %>/files/edit?path=<%= encodeURIComponent(item.path) %>" title="Edit File" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                           </a>
-                          <a href="/dashboard/server/<%= server.uuid %>/files/download?path=<%= encodeURIComponent(item.path) %>" title="Download File" class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400">
+                          <a href="/dashboard/server/<%= server.uuid %>/files/download?path=<%= encodeURIComponent(item.path) %>" title="Download File" class="p-1.5 rounded-lg bg-[#3FB950]/10 hover:bg-[#3FB950]/20 text-[#3FB950]">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                           </a>
                         <% } %>
@@ -116,7 +116,7 @@
                         <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/delete" onsubmit="return confirm('Delete <%= item.name %>?')" class="inline">
                           <input type="hidden" name="_csrf" value="<%= _csrf %>">
                           <input type="hidden" name="path" value="<%= item.path %>">
-                          <button type="submit" title="Delete" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400">
+                          <button type="submit" title="Delete" class="p-1.5 rounded-lg bg-[#F85149]/10 hover:bg-[#F85149]/20 text-[#F85149]">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                           </button>
                         </form>
@@ -135,20 +135,20 @@
 
 <!-- CREATE FILE MODAL -->
 <div id="createFileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-white/10">
-    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-[#30363D]">
+    <div class="flex items-center justify-between border-b border-[#30363D] pb-3">
       <h3 class="text-base font-bold text-white">Create New File</h3>
-      <button onclick="closeModal('createFileModal')" class="text-neutral-400 hover:text-white">&times;</button>
+      <button onclick="closeModal('createFileModal')" class="text-[#8B949E] hover:text-white">&times;</button>
     </div>
     <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/create" class="space-y-4 text-xs">
       <input type="hidden" name="_csrf" value="<%= _csrf %>">
       <input type="hidden" name="path" value="<%= currentPath %>">
       <input type="hidden" name="type" value="file">
       <div>
-        <label class="block font-semibold text-neutral-400 mb-1">File Name (e.g. server.properties, ops.json)</label>
-        <input type="text" name="name" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        <label class="block font-semibold text-[#8B949E] mb-1">File Name (e.g. server.properties, ops.json)</label>
+        <input type="text" name="name" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-sm text-white focus:outline-none focus:border-[#2F81F7]">
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-white/5">
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#30363D]">
         <button type="button" onclick="closeModal('createFileModal')" class="btn-secondary text-xs">Cancel</button>
         <button type="submit" class="btn-primary text-xs">Create File</button>
       </div>
@@ -158,20 +158,20 @@
 
 <!-- CREATE FOLDER MODAL -->
 <div id="createFolderModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-white/10">
-    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-[#30363D]">
+    <div class="flex items-center justify-between border-b border-[#30363D] pb-3">
       <h3 class="text-base font-bold text-white">Create New Folder</h3>
-      <button onclick="closeModal('createFolderModal')" class="text-neutral-400 hover:text-white">&times;</button>
+      <button onclick="closeModal('createFolderModal')" class="text-[#8B949E] hover:text-white">&times;</button>
     </div>
     <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/create" class="space-y-4 text-xs">
       <input type="hidden" name="_csrf" value="<%= _csrf %>">
       <input type="hidden" name="path" value="<%= currentPath %>">
       <input type="hidden" name="type" value="folder">
       <div>
-        <label class="block font-semibold text-neutral-400 mb-1">Folder Name (e.g. plugins, config)</label>
-        <input type="text" name="name" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        <label class="block font-semibold text-[#8B949E] mb-1">Folder Name (e.g. plugins, config)</label>
+        <input type="text" name="name" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-sm text-white focus:outline-none focus:border-[#2F81F7]">
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-white/5">
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#30363D]">
         <button type="button" onclick="closeModal('createFolderModal')" class="btn-secondary text-xs">Cancel</button>
         <button type="submit" class="btn-primary text-xs">Create Folder</button>
       </div>
@@ -181,19 +181,19 @@
 
 <!-- RENAME MODAL -->
 <div id="renameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-white/10">
-    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-[#30363D]">
+    <div class="flex items-center justify-between border-b border-[#30363D] pb-3">
       <h3 class="text-base font-bold text-white">Rename File or Folder</h3>
-      <button onclick="closeModal('renameModal')" class="text-neutral-400 hover:text-white">&times;</button>
+      <button onclick="closeModal('renameModal')" class="text-[#8B949E] hover:text-white">&times;</button>
     </div>
     <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/rename" class="space-y-4 text-xs">
       <input type="hidden" name="_csrf" value="<%= _csrf %>">
       <input type="hidden" id="renameOldPath" name="oldPath" value="">
       <div>
-        <label class="block font-semibold text-neutral-400 mb-1">New Name</label>
-        <input type="text" id="renameNewName" name="newName" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#101213] border border-white/5 text-sm text-white focus:outline-none focus:border-[#1873d3]">
+        <label class="block font-semibold text-[#8B949E] mb-1">New Name</label>
+        <input type="text" id="renameNewName" name="newName" required class="w-full px-3.5 py-2.5 rounded-xl bg-[#21262D] border border-[#30363D] text-sm text-white focus:outline-none focus:border-[#2F81F7]">
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-white/5">
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#30363D]">
         <button type="button" onclick="closeModal('renameModal')" class="btn-secondary text-xs">Cancel</button>
         <button type="submit" class="btn-primary text-xs">Save Name</button>
       </div>
@@ -203,19 +203,19 @@
 
 <!-- UPLOAD FILE MODAL -->
 <div id="uploadModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-white/10">
-    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+  <div class="kgp-card max-w-md w-full p-6 space-y-4 relative border-[#30363D]">
+    <div class="flex items-center justify-between border-b border-[#30363D] pb-3">
       <h3 class="text-base font-bold text-white">Upload File</h3>
-      <button onclick="closeModal('uploadModal')" class="text-neutral-400 hover:text-white">&times;</button>
+      <button onclick="closeModal('uploadModal')" class="text-[#8B949E] hover:text-white">&times;</button>
     </div>
     <form method="POST" action="/dashboard/server/<%= server.uuid %>/files/upload?path=<%= encodeURIComponent(currentPath) %>&_csrf=<%= encodeURIComponent(_csrf) %>" enctype="multipart/form-data" class="space-y-4 text-xs">
       <input type="hidden" name="_csrf" value="<%= _csrf %>">
       <input type="hidden" name="path" value="<%= currentPath %>">
       <div>
-        <label class="block font-semibold text-neutral-400 mb-2">Select File to Upload</label>
-        <input type="file" name="file" required class="w-full text-xs text-neutral-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#1873d3] file:text-white hover:file:bg-[#1462b8]">
+        <label class="block font-semibold text-[#8B949E] mb-2">Select File to Upload</label>
+        <input type="file" name="file" required class="w-full text-xs text-[#8B949E] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#2F81F7] file:text-white hover:file:bg-[#58A6FF]">
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-white/5">
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#30363D]">
         <button type="button" onclick="closeModal('uploadModal')" class="btn-secondary text-xs">Cancel</button>
         <button type="submit" class="btn-primary text-xs">Upload Now</button>
       </div>

@@ -1,21 +1,21 @@
 <%- include('../layouts/header', { title: '403 Forbidden' }) %>
 
-<div class="min-h-screen bg-[#101213] flex flex-col justify-center items-center px-6 py-12 relative overflow-hidden">
+<div class="min-h-screen bg-[#0D1117] flex flex-col justify-center items-center px-6 py-12 relative overflow-hidden">
   <!-- Background Glow FX -->
-  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#F85149]/10 rounded-full blur-3xl pointer-events-none"></div>
 
-  <div class="kgp-card max-w-md w-full p-8 text-center relative z-10 space-y-6 border-red-500/20">
-    <div class="w-20 h-20 mx-auto rounded-3xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-soft-md">
+  <div class="kgp-card max-w-md w-full p-8 text-center relative z-10 space-y-6 border-[#F85149]/20">
+    <div class="w-20 h-20 mx-auto rounded-3xl bg-[#F85149]/10 border border-[#F85149]/30 flex items-center justify-center text-[#F85149] shadow-soft-md">
       <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
     </div>
 
     <div>
-      <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/20">Access Denied</span>
+      <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#F85149]/10 text-[#F85149] border border-[#F85149]/20">Access Denied</span>
       <h1 class="text-3xl font-extrabold text-white mt-3">403 Forbidden</h1>
-      <p class="text-neutral-400 text-sm mt-2">You do not have the required permissions to access this administrative area.</p>
+      <p class="text-[#8B949E] text-sm mt-2">You do not have the required permissions to access this administrative area.</p>
     </div>
 
-    <div class="pt-4 border-t border-white/5 flex flex-col sm:flex-row gap-3">
+    <div class="pt-4 border-t border-[#30363D] flex flex-col sm:flex-row gap-3">
       <a href="/dashboard" class="btn-primary w-full text-center">Return to Dashboard</a>
       <a href="/" class="btn-secondary w-full text-center">Home Page</a>
     </div>

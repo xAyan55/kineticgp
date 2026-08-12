@@ -10,26 +10,26 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 13px;
     height: 100%;
-    background-color: #0a0b0c !important;
-    color: #e5e7eb !important;
+    background-color: #0D1117 !important;
+    color: #F0F6FC !important;
     border-radius: 0.75rem;
     line-height: 1.6;
   }
   .CodeMirror-gutters {
-    background-color: #101213 !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+    background-color: #161B22 !important;
+    border-right: 1px solid #30363D !important;
   }
   .CodeMirror-linenumber {
-    color: #525252 !important;
+    color: #8B949E !important;
   }
   .CodeMirror-cursor {
-    border-left: 2px solid #1873d3 !important;
+    border-left: 2px solid #2F81F7 !important;
   }
   .CodeMirror-selected {
-    background: rgba(24, 115, 211, 0.35) !important;
+    background: rgba(47, 129, 247, 0.35) !important;
   }
   .CodeMirror-focused .CodeMirror-selected {
-    background: rgba(24, 115, 211, 0.45) !important;
+    background: rgba(47, 129, 247, 0.45) !important;
   }
   .CodeMirror-activeline-background {
     background: rgba(255, 255, 255, 0.03) !important;
@@ -37,23 +37,23 @@
 
   /* CodeMirror Dialog & Search Bar Styling */
   .CodeMirror-dialog {
-    background-color: #101213 !important;
-    color: #e5e7eb !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background-color: #161B22 !important;
+    color: #F0F6FC !important;
+    border-bottom: 1px solid #30363D !important;
     padding: 8px 16px !important;
     font-family: ui-sans-serif, system-ui, sans-serif !important;
     font-size: 12px !important;
   }
   .CodeMirror-dialog input {
-    background-color: #0a0b0c !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background-color: #0D1117 !important;
+    border: 1px solid #30363D !important;
     color: #ffffff !important;
     border-radius: 6px !important;
     padding: 2px 8px !important;
     outline: none !important;
   }
   .CodeMirror-dialog button {
-    background-color: #1873d3 !important;
+    background-color: #2F81F7 !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 6px !important;
@@ -67,27 +67,27 @@
   .cm-keyword { color: #f472b6 !important; font-weight: 600; }
   .cm-atom { color: #c084fc !important; }
   .cm-number { color: #fbbf24 !important; }
-  .cm-def { color: #60a5fa !important; }
-  .cm-variable { color: #e5e7eb !important; }
-  .cm-property { color: #38bdf8 !important; font-weight: 500; }
-  .cm-operator { color: #f43f5e !important; }
-  .cm-comment { color: #6b7280 !important; font-style: italic; }
-  .cm-string { color: #4ade80 !important; }
+  .cm-def { color: #79C0FF !important; }
+  .cm-variable { color: #F0F6FC !important; }
+  .cm-property { color: #79C0FF !important; font-weight: 500; }
+  .cm-operator { color: #F85149 !important; }
+  .cm-comment { color: #8B949E !important; font-style: italic; }
+  .cm-string { color: #3FB950 !important; }
   .cm-string-2 { color: #a3e635 !important; }
-  .cm-meta { color: #94a3b8 !important; }
-  .cm-error { color: #f87171 !important; background: rgba(239, 68, 68, 0.15) !important; }
+  .cm-meta { color: #8B949E !important; }
+  .cm-error { color: #F85149 !important; background: rgba(248, 81, 73, 0.15) !important; }
 </style>
 
-<div class="min-h-screen bg-[#0a0b0c] flex flex-col lg:flex-row">
+<div class="min-h-screen bg-[#0D1117] flex flex-col lg:flex-row">
   <%- include('../components/sidebar') %>
 
   <main class="flex-1 lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
     <!-- Top Bar / Breadcrumb Navigation -->
-    <header class="h-14 px-6 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#0a0b0c]/90 sticky top-0 z-20">
-      <div class="flex items-center gap-2 text-xs sm:text-sm text-neutral-400 overflow-x-auto py-2">
+    <header class="h-14 px-6 lg:px-8 border-b border-[#30363D] flex items-center justify-between bg-[#0D1117]/90 sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-xs sm:text-sm text-[#8B949E] overflow-x-auto py-2">
         <span class="text-white font-medium">Servers</span>
         <span>/</span>
-        <span class="text-[#1873d3] font-medium"><%= server.name %></span>
+        <span class="text-[#2F81F7] font-medium"><%= server.name %></span>
         <span>/</span>
         <a href="/dashboard/server/<%= server.uuid %>/files" class="text-neutral-400 hover:text-white">Files</a>
         <% if (filePath) { %>
@@ -107,8 +107,8 @@
 
       <div class="flex items-center gap-3">
         <!-- Dynamic Unsaved Status Indicator -->
-        <span id="saveStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 transition">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="saveStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-[#3FB950]/10 text-[#3FB950] border border-[#3FB950]/30 flex items-center gap-1.5 transition">
+          <span class="w-2 h-2 rounded-full bg-[#3FB950] animate-pulse"></span>
           ● Saved
         </span>
 
@@ -117,7 +117,7 @@
         <button id="saveBtn" type="button" onclick="performSave()" <%= (!isText || isTooLarge) ? 'disabled' : '' %> class="btn-kinetic text-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 00-2 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
           Save File
-        </button>n>
+        </button>
       </div>
     </header>
 
@@ -188,12 +188,12 @@
                 Wrap: OFF
               </button>
 
-              <select id="indentSelect" onchange="changeIndent(this.value)" class="px-2.5 py-1 rounded-lg bg-[#101213] border border-white/10 text-neutral-300 text-xs outline-none">
+              <select id="indentSelect" onchange="changeIndent(this.value)" class="px-2.5 py-1 rounded-lg bg-[#21262D] border border-[#30363D] text-neutral-300 text-xs outline-none">
                 <option value="2">2 Spaces</option>
                 <option value="4" selected>4 Spaces</option>
               </select>
 
-              <select id="fontSelect" onchange="changeFontSize(this.value)" class="px-2.5 py-1 rounded-lg bg-[#101213] border border-white/10 text-neutral-300 text-xs outline-none">
+              <select id="fontSelect" onchange="changeFontSize(this.value)" class="px-2.5 py-1 rounded-lg bg-[#21262D] border border-[#30363D] text-neutral-300 text-xs outline-none">
                 <option value="12">12px</option>
                 <option value="13" selected>13px</option>
                 <option value="15">15px</option>

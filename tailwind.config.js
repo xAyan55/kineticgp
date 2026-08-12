@@ -9,19 +9,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        dark: '#0a0b0c',
-        surface: '#121416',
-        'surface-elevated': '#181a1d',
-        'light-dark': '#1a1c1e',
-        'semi-dark': '#232629',
+        dark: '#0D1117',
+        surface: '#161B22',
+        'surface-elevated': '#21262D',
+        'light-dark': '#21262D',
+        'semi-dark': '#21262D',
+        border: '#30363D',
         'kinetic-blue': {
-          DEFAULT: '#1873d3',
-          hover: '#1462b8',
-          light: '#3b8ded',
-          dark: '#0f529a'
+          DEFAULT: '#2F81F7',
+          hover: '#58A6FF',
+          light: '#79C0FF',
+          dark: '#1F6FEB'
         },
-        'kinetic-gray': '#686a6b',
-        'kinetic-light': '#e6e8e9'
+        'kinetic-gray': '#8B949E',
+        'kinetic-light': '#F0F6FC',
+        success: '#3FB950',
+        error: '#F85149'
       },
       fontFamily: {
         poppins: ['Poppins', 'sans-serif'],

@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#101213">
+  <meta name="theme-color" content="#141414">
   <% if (typeof csrfToken !== 'undefined') { %>
     <meta name="csrf-token" content="<%= csrfToken %>">
   <% } %>
-  <title>KineticGP - <%= typeof title !== 'undefined' ? title : 'Minecraft Server Management' %></title>
+  <title>KineticGP - <%= typeof title !== 'undefined' ? title : 'Game Server Panel' %></title>
   
   <link rel="icon" href="/images/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700&display=swap">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=1.0">
+  <link rel="stylesheet" href="/css/styles.css?v=2.0">
 </head>
-<body class="bg-[#101213] text-[#e6e8e9] font-poppins min-h-full flex flex-col antialiased selection:bg-[#1873d3] selection:text-white">
+<body class="bg-[#141414] text-[#e0e0e0] min-h-full flex flex-col antialiased selection:bg-white selection:text-black">
