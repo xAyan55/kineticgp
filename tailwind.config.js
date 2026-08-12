@@ -9,46 +9,43 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        dark: '#101213',
+        dark: '#0a0b0c',
+        surface: '#121416',
+        'surface-elevated': '#181a1d',
         'light-dark': '#1a1c1e',
-        'semi-dark': '#2b2f32',
+        'semi-dark': '#232629',
         'kinetic-blue': {
           DEFAULT: '#1873d3',
           hover: '#1462b8',
           light: '#3b8ded',
-          glow: 'rgba(24, 115, 211, 0.25)'
+          dark: '#0f529a'
         },
         'kinetic-gray': '#686a6b',
         'kinetic-light': '#e6e8e9'
       },
       fontFamily: {
         poppins: ['Poppins', 'sans-serif'],
-        mono: ['ui-monospace', 'Cascadia Code', 'SF Mono', 'monospace']
+        mono: ['JetBrains Mono', 'Cascadia Code', 'SF Mono', 'Fira Code', 'Consolas', 'monospace']
       },
       borderRadius: {
-        'sm': '8px',
-        'md': '12px',
-        'lg': '16px',
-        'xl': '20px',
-        '2xl': '24px'
+        'sm': '6px',
+        'md': '8px',
+        'lg': '12px',
+        'xl': '16px',
+        '2xl': '20px'
       },
       boxShadow: {
-        'soft-md': '0 6px 12px -10px rgba(0, 0, 0, 0.4)',
-        'soft-lg': '0 8px 18px -14px rgba(0, 0, 0, 0.5)',
-        'soft-2xl': '0 18px 44px -28px rgba(0, 0, 0, 0.6)',
-        'blue-glow': '0 0 20px rgba(24, 115, 211, 0.2)'
+        'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3)',
+        'panel': '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
+        'soft-md': '0 6px 12px -10px rgba(0, 0, 0, 0.4)'
       },
       maxWidth: {
-        'container': '1400px'
+        'container': '1400px',
+        'wide': '1700px'
       },
       spacing: {
-        '56': '14rem', // 224px sidebar
-        '16': '4rem'   // 64px navbar
-      },
-      transitionDuration: {
-        'fast': '150ms',
-        'normal': '250ms',
-        'slow': '350ms'
+        '60': '15rem', // 240px sidebar
+        '14': '3.5rem' // 56px header
       }
     }
   },

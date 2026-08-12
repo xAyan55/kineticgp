@@ -1,18 +1,18 @@
 <%- include('../layouts/header', { title: 'Server Management' }) %>
 
-<div class="min-h-screen bg-[#101213] flex flex-col lg:flex-row">
+<div class="min-h-screen bg-[#0a0b0c] flex flex-col lg:flex-row">
   <%- include('../components/sidebar') %>
 
-  <main class="flex-1 lg:pl-56 pt-16 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
+  <main class="flex-1 lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-10 min-h-screen flex flex-col">
     <!-- Top Bar / Breadcrumb Navigation -->
-    <header class="h-16 px-6 lg:px-10 border-b border-white/5 flex items-center justify-between bg-[#101213]/80 backdrop-blur-xl sticky top-0 z-20">
-      <div class="flex items-center gap-2 text-sm text-neutral-400">
+    <header class="h-14 px-6 lg:px-8 border-b border-white/5 flex items-center justify-between bg-[#0a0b0c]/90 sticky top-0 z-20">
+      <div class="flex items-center gap-2 text-xs sm:text-sm text-neutral-400">
         <span class="text-white font-medium">Administration</span>
         <span>/</span>
         <span class="text-[#1873d3] font-medium">Servers</span>
       </div>
       <div class="flex items-center gap-3">
-        <a href="/admin/servers/create" class="btn-primary text-xs flex items-center gap-2">
+        <a href="/admin/servers/create" class="btn-kinetic text-xs flex items-center gap-2 py-1.5 px-3">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Create Server
         </a>
