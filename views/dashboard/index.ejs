@@ -113,26 +113,33 @@
             </div>
           <% } else { %>
           <% servers.forEach(function(server) { %>
-            <div class="kgp-card p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <!-- Server Header -->
-                <div class="flex items-start justify-between mb-3">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-2.5 h-2.5 rounded-full <%= server.status === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-600' %> flex-shrink-0"></div>
-                    <div>
-                      <a href="/dashboard/server/<%= server.uuid %>/console" class="text-base font-bold text-white hover:text-[#1873d3] leading-tight block">
+            <div class="kgp-card overflow-hidden flex flex-col justify-between">
+              <!-- Server Card Header Banner with sever-banner.gif -->
+              <div class="relative p-5 bg-cover bg-center min-h-[96px] flex items-center" style="background-image: url('/images/banners/sever-banner.gif');">
+                <!-- Overlay for readability -->
+                <div class="absolute inset-0 bg-[#0a0b0c]/80 z-0"></div>
+
+                <div class="relative z-10 w-full flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <!-- Minecraft Server Icon mc.webp -->
+                    <img src="/images/products_img/mc.webp" alt="Minecraft Server" class="w-11 h-11 rounded-lg border border-white/20 object-cover flex-shrink-0 shadow-md">
+                    <div class="min-w-0">
+                      <a href="/dashboard/server/<%= server.uuid %>/console" class="text-base font-bold text-white hover:text-[#1873d3] leading-tight block truncate">
                         <%= server.name %>
                       </a>
-                      <p class="text-xs text-neutral-400 mt-0.5"><%= server.software %> <%= server.version %></p>
+                      <p class="text-xs text-neutral-300 mt-0.5 truncate"><%= server.software %> <%= server.version %></p>
                     </div>
                   </div>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider <%= server.status === 'online' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400 border border-neutral-700' %>">
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider flex-shrink-0 <%= server.status === 'online' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-neutral-800/90 text-neutral-400 border border-neutral-700' %>">
                     <%= server.status %>
                   </span>
                 </div>
+              </div>
 
+              <!-- Card Details Content -->
+              <div class="p-5 space-y-4 flex-1 flex flex-col justify-between">
                 <!-- Connection details -->
-                <div class="p-3 rounded-lg bg-[#0d0e0f] border border-white/5 text-xs space-y-1">
+                <div class="p-3 rounded-lg bg-[#0d0e0f] border border-white/5 text-xs space-y-1.5">
                   <div class="flex justify-between">
                     <span class="text-neutral-500">Address:</span>
                     <span class="font-mono text-white font-medium"><%= server.ip_address || '127.0.0.1' %>:<%= server.port %></span>
@@ -142,13 +149,13 @@
                     <span class="text-neutral-300 font-medium"><%= (server.ram_limit / 1024).toFixed(1) %> GB</span>
                   </div>
                 </div>
-              </div>
 
-              <!-- Action Links -->
-              <div class="pt-3 border-t border-white/5">
-                <a href="/dashboard/server/<%= server.uuid %>/console" class="w-full btn-kinetic text-xs justify-center py-2">
-                  Manage Console & Files
-                </a>
+                <!-- Action Links -->
+                <div class="pt-2 border-t border-white/5">
+                  <a href="/dashboard/server/<%= server.uuid %>/console" class="w-full btn-kinetic text-xs justify-center py-2">
+                    Manage Console & Files
+                  </a>
+                </div>
               </div>
             </div>
           <% }); %>
