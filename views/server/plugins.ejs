@@ -315,8 +315,36 @@ async function installPlugin(projectId, title, btnEl) {
   const originalText = btnEl.innerText;
   btnEl.disabled = true;
   btnEl.innerText = 'Initializing...';
+  btnEl.style.transition = 'background 0.2s ease';
 
-  // Start Real-Time Progress Polling (every 250ms)
+  try {
+    // 1. Send Instant Async Request
+    const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/install`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({ projectId, _csrf: csrfToken })
+    });
+
+    const initData = await res.json();
+    if (!initData.success) {
+      alert(`Installation Failed: ${initData.message || 'Server error'}`);
+      btnEl.disabled = false;
+      btnEl.innerText = originalText;
+      btnEl.style.background = '';
+      return;
+    }
+  } catch (err) {
+    alert('Failed to send installation request. Check network connection.');
+    btnEl.disabled = false;
+    btnEl.innerText = originalText;
+    btnEl.style.background = '';
+    return;
+  }
+
+  // 2. Poll Real-Time Background Progress (every 250ms)
   let pollInterval = setInterval(async () => {
     try {
       const pRes = await fetch(`/dashboard/server/${serverUuid}/plugins/api/progress?projectId=${projectId}`);
@@ -324,7 +352,28 @@ async function installPlugin(projectId, title, btnEl) {
 
       if (pData.success && pData.progress) {
         const prog = pData.progress;
-        if (prog.status === 'verifying') {
+
+        if (prog.status === 'completed') {
+          clearInterval(pollInterval);
+          btnEl.innerText = 'Installed!';
+          btnEl.style.background = '';
+          btnEl.classList.remove('btn-kinetic');
+          btnEl.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/40');
+
+          if (prog.requiresRestart) {
+            alert(`Plugin "${prog.filename}" (${prog.version || 'latest'}) installed successfully to disk!\n\nNote: Server is currently online. Restart the server to load the new plugin into Minecraft.`);
+          } else {
+            alert(`Plugin "${prog.filename}" (${prog.version || 'latest'}) installed successfully!`);
+          }
+
+          refreshInstalledList();
+        } else if (prog.status === 'failed') {
+          clearInterval(pollInterval);
+          alert(`Installation Failed: ${prog.error || 'Download failed'}`);
+          btnEl.disabled = false;
+          btnEl.innerText = originalText;
+          btnEl.style.background = '';
+        } else if (prog.status === 'verifying') {
           btnEl.innerText = 'Verifying SHA-512...';
           btnEl.style.background = 'linear-gradient(to right, #1873d3 100%, #121416 100%)';
         } else if (prog.percent > 0) {
@@ -335,60 +384,9 @@ async function installPlugin(projectId, title, btnEl) {
         }
       }
     } catch (e) {
-      // Ignore polling errors
+      // Ignore transient polling errors
     }
   }, 250);
-
-  try {
-    const res = await fetch(`/dashboard/server/${serverUuid}/plugins/api/install`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': csrfToken
-      },
-      body: JSON.stringify({ projectId, _csrf: csrfToken })
-    });
-
-    clearInterval(pollInterval);
-
-    let data;
-    try {
-      data = await res.json();
-    } catch (parseErr) {
-      alert(`Installation Error: Server returned status ${res.status}. Please try again.`);
-      btnEl.disabled = false;
-      btnEl.innerText = originalText;
-      btnEl.style.background = '';
-      return;
-    }
-
-    if (!data.success) {
-      alert(`Installation Failed: ${data.message || data.error || 'Unknown error'}`);
-      btnEl.disabled = false;
-      btnEl.innerText = originalText;
-      btnEl.style.background = '';
-      return;
-    }
-
-    btnEl.innerText = 'Installed!';
-    btnEl.style.background = '';
-    btnEl.classList.remove('btn-kinetic');
-    btnEl.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/40');
-
-    if (data.requiresRestart) {
-      alert(`Plugin "${data.filename}" (${data.version}) installed successfully to disk!\n\nNote: Server is currently online. Restart the server to load the new plugin into Minecraft.`);
-    } else {
-      alert(`Plugin "${data.filename}" (${data.version}) installed successfully!`);
-    }
-
-    refreshInstalledList();
-  } catch (err) {
-    clearInterval(pollInterval);
-    alert('Installation request timed out or failed to connect to server. Please try again.');
-    btnEl.disabled = false;
-    btnEl.innerText = originalText;
-    btnEl.style.background = '';
-  }
 }
 
 async function confirmDelete(filename) {

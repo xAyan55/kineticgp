@@ -184,8 +184,9 @@ export class PluginController {
 
   /**
    * API: Download & Install Plugin (POST /dashboard/server/:uuid/plugins/api/install)
+   * Spawns installation asynchronously to prevent HTTP 502 / gateway timeouts.
    */
-  static async apiInstallPlugin(req: Request, res: Response): Promise<void> {
+  static apiInstallPlugin(req: Request, res: Response): void {
     const auth = PluginController.authorize(req, res);
     if (!auth) return;
 
@@ -197,16 +198,17 @@ export class PluginController {
       return;
     }
 
-    try {
-      const result = await PluginManagerService.installPlugin(server, projectIdOrSlug, user, req.ip);
-      res.json(result);
-    } catch (e: any) {
-      res.status(e.statusCode || 500).json({
-        success: false,
-        error: e.code || 'INSTALL_FAILED',
-        message: e.message || 'Plugin installation failed.'
+    // Trigger installation in background without blocking response
+    PluginManagerService.installPlugin(server, projectIdOrSlug, user, req.ip)
+      .catch((err) => {
+        console.warn(`[PluginInstall] Background installation error: ${err.message}`);
       });
-    }
+
+    res.status(202).json({
+      success: true,
+      status: 'started',
+      message: 'Plugin download started in background.'
+    });
   }
 
   /**

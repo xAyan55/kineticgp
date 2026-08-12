@@ -27,6 +27,10 @@ export interface PluginDownloadProgress {
   status: 'downloading' | 'verifying' | 'completed' | 'failed';
   formattedLoaded: string;
   formattedTotal: string;
+  filename?: string;
+  version?: string;
+  requiresRestart?: boolean;
+  error?: string;
 }
 
 export class PluginManagerService {
@@ -231,6 +235,15 @@ export class PluginManagerService {
     }
 
     try {
+      PluginManagerService.setProgress(lockKey, {
+        loadedBytes: 0,
+        totalBytes: 0,
+        percent: 0,
+        status: 'downloading',
+        formattedLoaded: '0 B',
+        formattedTotal: '0 B'
+      });
+
       const project = await ModrinthService.getProject(projectIdOrSlug);
       if (!project || !PluginCompatibilityService.isPluginProject(project)) {
         const err = new Error('Selected project is not a valid Bukkit-compatible plugin.');
@@ -283,15 +296,48 @@ export class PluginManagerService {
 
       ActivityModel.log(user.id, user.username, 'PLUGIN_INSTALL', `Installed plugin ${project.title} (${targetVersion.version_number}) on server ${server.name}`, ipAddress);
 
-      return {
+      const result = {
         success: true,
         filename: sanitizedFilename,
         version: targetVersion.version_number,
         requiresRestart: server.status === 'online'
       };
-    } finally {
-      this.clearProgress(lockKey);
-      this.releaseLock(lockKey);
+
+      PluginManagerService.setProgress(lockKey, {
+        loadedBytes: primaryFile.size || 0,
+        totalBytes: primaryFile.size || 0,
+        percent: 100,
+        status: 'completed',
+        formattedLoaded: FileManagerService.formatBytes(primaryFile.size || 0),
+        formattedTotal: FileManagerService.formatBytes(primaryFile.size || 0),
+        filename: sanitizedFilename,
+        version: targetVersion.version_number,
+        requiresRestart: server.status === 'online'
+      });
+
+      setTimeout(() => {
+        PluginManagerService.clearProgress(lockKey);
+        PluginManagerService.releaseLock(lockKey);
+      }, 30000);
+
+      return result;
+    } catch (e: any) {
+      PluginManagerService.setProgress(lockKey, {
+        loadedBytes: 0,
+        totalBytes: 0,
+        percent: 0,
+        status: 'failed',
+        formattedLoaded: '0 B',
+        formattedTotal: '0 B',
+        error: e.message || 'Installation failed.'
+      });
+
+      setTimeout(() => {
+        PluginManagerService.clearProgress(lockKey);
+        PluginManagerService.releaseLock(lockKey);
+      }, 30000);
+
+      throw e;
     }
   }
 

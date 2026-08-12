@@ -166,8 +166,9 @@ class PluginController {
     }
     /**
      * API: Download & Install Plugin (POST /dashboard/server/:uuid/plugins/api/install)
+     * Spawns installation asynchronously to prevent HTTP 502 / gateway timeouts.
      */
-    static async apiInstallPlugin(req, res) {
+    static apiInstallPlugin(req, res) {
         const auth = PluginController.authorize(req, res);
         if (!auth)
             return;
@@ -177,17 +178,16 @@ class PluginController {
             res.status(400).json({ success: false, error: 'MISSING_PROJECT_ID', message: 'Plugin project ID or slug is required.' });
             return;
         }
-        try {
-            const result = await pluginManagerService_1.PluginManagerService.installPlugin(server, projectIdOrSlug, user, req.ip);
-            res.json(result);
-        }
-        catch (e) {
-            res.status(e.statusCode || 500).json({
-                success: false,
-                error: e.code || 'INSTALL_FAILED',
-                message: e.message || 'Plugin installation failed.'
-            });
-        }
+        // Trigger installation in background without blocking response
+        pluginManagerService_1.PluginManagerService.installPlugin(server, projectIdOrSlug, user, req.ip)
+            .catch((err) => {
+            console.warn(`[PluginInstall] Background installation error: ${err.message}`);
+        });
+        res.status(202).json({
+            success: true,
+            status: 'started',
+            message: 'Plugin download started in background.'
+        });
     }
     /**
      * API: Delete installed plugin .jar (POST /dashboard/server/:uuid/plugins/api/delete)
