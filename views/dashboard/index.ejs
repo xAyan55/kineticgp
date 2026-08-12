@@ -122,7 +122,7 @@
                 <div class="relative z-10 w-full flex items-center justify-between gap-3">
                   <div class="flex items-center gap-3">
                     <!-- Minecraft Server Icon mc.webp -->
-                    <img src="/images/products_img/mc.webp" alt="Minecraft Server" class="w-11 h-11 rounded-lg border border-white/20 object-cover flex-shrink-0 shadow-md">
+                    <img src="/images/products_img/mc.webp" onerror="this.onerror=null; this.src='/images/products_img/minecraft.png';" alt="Minecraft Server" class="w-11 h-11 rounded-lg border border-white/20 object-cover flex-shrink-0 shadow-md">
                     <div class="min-w-0">
                       <a href="/dashboard/server/<%= server.uuid %>/console" class="text-base font-bold text-white hover:text-[#1873d3] leading-tight block truncate">
                         <%= server.name %>
